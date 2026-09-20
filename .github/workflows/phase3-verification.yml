@@ -2,34 +2,58 @@ name: Phase 3 Verification
 
 on:
   push:
-    branches: ["main", "master"]
-  pull_request:
-    branches: ["main", "master"]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  static-and-build:
+  verify:
     name: TypeScript + Build + Phase 3 Static Checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inspect repository
+        run: |
+          echo "=== Current directory ==="
+          pwd
+
+          echo "=== Root files ==="
+          ls -la
+
+          echo "=== package.json check ==="
+          if [ -f package.json ]; then
+            echo "package.json FOUND"
+            cat package.json
+          else
+            echo "ERROR: package.json NOT FOUND"
+            exit 1
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-    
+          node-version: 22
+
+      - name: Show Node and npm versions
+        run: |
+          node --version
+          npm --version
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          echo "=== Installing dependencies ==="
+          npm install --no-audit --no-fund --verbose
 
       - name: TypeScript check
-        run: npx tsc --noEmit
+        run: |
+          npm run typecheck
 
       - name: Production build
-        run: npm run build
+        run: |
+          npm run build
 
       - name: Phase 3 static verification
-        run: node scripts/verify-phase3.mjs
+        run: |
+          node scripts/verify-phase3.mjs
