@@ -1,4 +1,4 @@
-import type { UserProfile } from '@/types/user.types';
+import type { UserProfile } from '@/types/auth.types';
 import { toAppError } from '@/lib/errors';
 import { getSupabaseClient } from './supabase/client';
 
