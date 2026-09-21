@@ -28,7 +28,7 @@ export function RoleGuard({
     );
   }
 
-  if (!profile || !allowed.includes(role as UserRoleEnum)) {
+  if (!profile || !role || !allowed.includes(role)) {
     return <Navigate to={ROUTES.PROFILE} replace />;
   }
 
