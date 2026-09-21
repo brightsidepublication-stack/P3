@@ -27,3 +27,7 @@ export function getAuthErrorMessage(error: unknown): string {
 
   return 'خطایی در احراز هویت رخ داد. لطفاً دوباره تلاش کنید.';
 }
+
+export function mapAuthError(error: unknown): Error {
+  return new Error(getAuthErrorMessage(error));
+}
