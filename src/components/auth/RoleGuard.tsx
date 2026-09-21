@@ -15,6 +15,9 @@ export function RoleGuard({
 }: RoleGuardProps) {
   const { profile, isLoading, isProfileLoading } = useAuth();
 
+  const allowed = requiredRoles;
+  const role = profile?.role;
+
   if (isLoading || isProfileLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -25,7 +28,7 @@ export function RoleGuard({
     );
   }
 
-  if (!profile || !requiredRoles.includes(profile.role)) {
+  if (!profile || !allowed.includes(role as UserRoleEnum)) {
     return <Navigate to={ROUTES.PROFILE} replace />;
   }
 
