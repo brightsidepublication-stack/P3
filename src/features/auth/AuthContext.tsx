@@ -25,15 +25,12 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   profile: UserProfile | null;
-
   isLoading: boolean;
   isProfileLoading: boolean;
   profileError: string | null;
-
   isAuthenticated: boolean;
   isAgent: boolean;
   isAdmin: boolean;
-
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -42,13 +39,14 @@ interface AuthContextValue {
   retryProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(
+  undefined,
+);
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -57,65 +55,73 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const sessionRef = useRef<Session | null>(null);
   const profileRequestIdRef = useRef(0);
 
-  const loadProfile = useCallback(async (currentSession: Session | null) => {
-    const requestId = ++profileRequestIdRef.current;
+  const loadProfile = useCallback(
+    async (currentSession: Session | null) => {
+      const requestId = ++profileRequestIdRef.current;
 
-    if (!currentSession) {
-      if (!mountedRef.current) return;
+      if (!currentSession) {
+        if (!mountedRef.current) {
+          return;
+        }
 
-      setProfile(null);
-      setProfileError(null);
-      setIsProfileLoading(false);
-      return;
-    }
-
-    setIsProfileLoading(true);
-    setProfileError(null);
-
-    try {
-      const nextProfile = await getProfileById(currentSession.user.id);
-
-      if (
-        !mountedRef.current ||
-        requestId !== profileRequestIdRef.current ||
-        sessionRef.current?.user.id !== currentSession.user.id
-      ) {
-        return;
-      }
-
-      setProfile(nextProfile);
-    } catch {
-      if (
-        !mountedRef.current ||
-        requestId !== profileRequestIdRef.current ||
-        sessionRef.current?.user.id !== currentSession.user.id
-      ) {
-        return;
-      }
-
-      setProfile(null);
-      setProfileError(
-        'دریافت اطلاعات پروفایل با خطا مواجه شد. لطفاً دوباره تلاش کنید.',
-      );
-    } finally {
-      if (
-        mountedRef.current &&
-        requestId === profileRequestIdRef.current
-      ) {
+        setProfile(null);
+        setProfileError(null);
         setIsProfileLoading(false);
+        return;
       }
-    }
-  }, []);
+
+      setIsProfileLoading(true);
+      setProfileError(null);
+
+      try {
+        const nextProfile = await getProfileById(
+          currentSession.user.id,
+        );
+
+        if (
+          !mountedRef.current ||
+          requestId !== profileRequestIdRef.current ||
+          sessionRef.current?.user.id !== currentSession.user.id
+        ) {
+          return;
+        }
+
+        setProfile(nextProfile);
+      } catch {
+        if (
+          !mountedRef.current ||
+          requestId !== profileRequestIdRef.current ||
+          sessionRef.current?.user.id !== currentSession.user.id
+        ) {
+          return;
+        }
+
+        setProfile(null);
+        setProfileError(
+          'دریافت اطلاعات پروفایل با خطا مواجه شد. لطفاً دوباره تلاش کنید.',
+        );
+      } finally {
+        if (
+          mountedRef.current &&
+          requestId === profileRequestIdRef.current
+        ) {
+          setIsProfileLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   const applySession = useCallback(
     async (nextSession: Session | null) => {
       sessionRef.current = nextSession;
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) {
+        return;
+      }
 
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-
       setProfile(null);
       setProfileError(null);
 
@@ -131,22 +137,108 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     mountedRef.current = true;
 
-    const unsubscribe = onAuthStateChange(async (event, nextSession) => {
-      if (!mountedRef.current) return;
-
-      if (event === 'INITIAL_SESSION') {
-        await applySession(nextSession);
-
-        if (mountedRef.current) {
-          setIsLoading(false);
+    const subscription = onAuthStateChange(
+      async (event, nextSession) => {
+        if (!mountedRef.current) {
+          return;
         }
 
-        return;
-      }
+        if (event === 'INITIAL_SESSION') {
+          await applySession(nextSession);
 
-      await applySession(nextSession);
-    });
+          if (mountedRef.current) {
+            setIsLoading(false);
+          }
+
+          return;
+        }
+
+        await applySession(nextSession);
+      },
+    );
 
     return () => {
       mountedRef.current = false;
-      profileRequestIdRef.current
+      profileRequestIdRef.current += 1;
+      subscription.unsubscribe();
+    };
+  }, [applySession]);
+
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      await signInService(email, password);
+    },
+    [],
+  );
+
+  const signUp = useCallback(
+    async (email: string, password: string) => {
+      await signUpService(email, password);
+    },
+    [],
+  );
+
+  const signOut = useCallback(async () => {
+    await signOutService();
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    await resetPasswordService(email);
+  }, []);
+
+  const updatePassword = useCallback(async (password: string) => {
+    await updatePasswordService(password);
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      session,
+      profile,
+      isLoading,
+      isProfileLoading,
+      profileError,
+      isAuthenticated: Boolean(user),
+      isAgent: profile?.role === 'agent',
+      isAdmin: profile?.role === 'admin',
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updatePassword,
+      retryProfile,
+    }),
+    [
+      user,
+      session,
+      profile,
+      isLoading,
+      isProfileLoading,
+      profileError,
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updatePassword,
+      retryProfile,
+    ],
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuthContext(): AuthContextValue {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      'useAuthContext must be used within AuthProvider.',
+    );
+  }
+
+  return context;
+}
