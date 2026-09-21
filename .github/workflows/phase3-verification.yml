@@ -56,4 +56,28 @@ jobs:
 
       - name: Phase 3 static verification
         run: |
-          node scripts/verify-phase3.mjs
+          echo "=== Phase 3 static verification ==="
+          echo "=== Verification script ==="
+
+          if [ -f scripts/verify-phase3.mjs ]; then
+            sed -n '1,260p' scripts/verify-phase3.mjs
+          else
+            echo "ERROR: scripts/verify-phase3.mjs NOT FOUND"
+            exit 1
+          fi
+
+          echo "=== Running verification ==="
+
+          set +e
+          node scripts/verify-phase3.mjs 2>&1
+          STATUS=$?
+          set -e
+
+          echo "=== Verification exit code: $STATUS ==="
+
+          if [ "$STATUS" -ne 0 ]; then
+            echo "=== Phase 3 static verification FAILED ==="
+            exit "$STATUS"
+          fi
+
+          echo "=== Phase 3 static verification PASSED ==="
