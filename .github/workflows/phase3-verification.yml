@@ -1,6 +1,5 @@
-      - name: Phase 3 checks
-        run: |
-          echo "=== PHASE 3 CHECKS START ==="
+           - name: Phase 3 checks
+        run: echo "PHASE 3 CHECKS RUNNING"
 
           echo "--- Checking required files ---"
 
