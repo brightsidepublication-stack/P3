@@ -1,4 +1,9 @@
-import type { Session, AuthChangeEvent, Subscription } from '@supabase/supabase-js';
+import type {
+  AuthChangeEvent,
+  Session,
+  Subscription,
+} from '@supabase/supabase-js';
+
 import { getSupabaseClient } from './supabase/client';
 import { getProfileById } from './profiles.service';
 import { toAppError } from '@/lib/errors';
@@ -19,17 +24,6 @@ import type { AuthUser, UserProfile } from '@/types/auth.types';
  *  - Raw Supabase errors are mapped to safe user-facing messages.
  */
 
-export type SignUpParams = {
-  email: string;
-  password: string;
-  fullName?: string;
-};
-
-export type SignInParams = {
-  email: string;
-  password: string;
-};
-
 // ---------------------------------------------------------------------------
 // Session / identity
 // ---------------------------------------------------------------------------
@@ -38,14 +32,18 @@ export async function getSession(): Promise<Session | null> {
   try {
     const sb = getSupabaseClient();
     const { data, error } = await sb.auth.getSession();
-    if (error) throw error;
+
+    if (error) {
+      throw error;
+    }
+
     return data.session;
-  } catch (e) {
-    throw toAppError(e);
+  } catch (error) {
+    throw toAppError(error);
   }
 }
 
-function toAuthUser(u: {
+function toAuthUser(user: {
   id: string;
   email?: string | null;
   phone?: string | null;
@@ -53,12 +51,12 @@ function toAuthUser(u: {
   created_at: string;
 }): AuthUser {
   return {
-    id: u.id,
-    email: u.email ?? null,
-    phone: u.phone ?? null,
+    id: user.id,
+    email: user.email ?? null,
+    phone: user.phone ?? null,
     displayName:
-      (u.user_metadata?.full_name as string | undefined) ?? null,
-    createdAt: u.created_at,
+      (user.user_metadata?.full_name as string | undefined) ?? null,
+    createdAt: user.created_at,
   };
 }
 
@@ -66,11 +64,18 @@ export async function getCurrentAuthUser(): Promise<AuthUser | null> {
   try {
     const sb = getSupabaseClient();
     const { data, error } = await sb.auth.getUser();
-    if (error) throw error;
-    if (!data.user) return null;
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data.user) {
+      return null;
+    }
+
     return toAuthUser(data.user);
-  } catch (e) {
-    throw toAppError(e);
+  } catch (error) {
+    throw toAppError(error);
   }
 }
 
@@ -81,50 +86,66 @@ export type CurrentUser = {
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const auth = await getCurrentAuthUser();
-  if (!auth) return null;
 
-  let profile: UserProfile | null = null;
-  try {
-    profile = await getProfileById(auth.id);
-  } catch (e) {
-    logger.warn('Failed to load profile for current user', e);
+  if (!auth) {
+    return null;
   }
 
-  return { auth, profile };
+  let profile: UserProfile | null = null;
+
+  try {
+    profile = await getProfileById(auth.id);
+  } catch (error) {
+    logger.warn('Failed to load profile for current user', error);
+  }
+
+  return {
+    auth,
+    profile,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Mutations
 // ---------------------------------------------------------------------------
 
-export async function signUp(params: SignUpParams): Promise<void> {
+export async function signUp(
+  email: string,
+  password: string,
+): Promise<void> {
   try {
     const sb = getSupabaseClient();
+
     const { error } = await sb.auth.signUp({
-      email: params.email,
-      password: params.password,
-      options: {
-        data: {
-          full_name: params.fullName ?? null,
-        },
-      },
+      email,
+      password,
     });
-    if (error) throw error;
-  } catch (e) {
-    throw mapAuthError(e);
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw mapAuthError(error);
   }
 }
 
-export async function signIn(params: SignInParams): Promise<void> {
+export async function signIn(
+  email: string,
+  password: string,
+): Promise<void> {
   try {
     const sb = getSupabaseClient();
+
     const { error } = await sb.auth.signInWithPassword({
-      email: params.email,
-      password: params.password,
+      email,
+      password,
     });
-    if (error) throw error;
-  } catch (e) {
-    throw mapAuthError(e);
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw mapAuthError(error);
   }
 }
 
@@ -132,15 +153,19 @@ export async function signOut(): Promise<void> {
   try {
     const sb = getSupabaseClient();
     const { error } = await sb.auth.signOut();
-    if (error) throw error;
-  } catch (e) {
-    throw mapAuthError(e);
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw mapAuthError(error);
   }
 }
 
 export async function resetPassword(email: string): Promise<void> {
   try {
     const sb = getSupabaseClient();
+
     const redirectTo =
       typeof window !== 'undefined'
         ? `${window.location.origin}/login`
@@ -150,22 +175,29 @@ export async function resetPassword(email: string): Promise<void> {
       redirectTo,
     });
 
-    if (error) throw error;
-  } catch (e) {
-    throw mapAuthError(e);
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw mapAuthError(error);
   }
 }
 
-export async function updatePassword(newPassword: string): Promise<void> {
+export async function updatePassword(
+  newPassword: string,
+): Promise<void> {
   try {
     const sb = getSupabaseClient();
+
     const { error } = await sb.auth.updateUser({
       password: newPassword,
     });
 
-    if (error) throw error;
-  } catch (e) {
-    throw mapAuthError(e);
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw mapAuthError(error);
   }
 }
 
@@ -173,15 +205,20 @@ export async function updatePassword(newPassword: string): Promise<void> {
 // Auth state subscription
 // ---------------------------------------------------------------------------
 
-export type AuthSubscription = Pick<Subscription, 'unsubscribe'>;
+export type AuthSubscription = Pick<
+  Subscription,
+  'unsubscribe'
+>;
 
-export function subscribeToAuthChanges(
+export function onAuthStateChange(
   callback: (
     event: AuthChangeEvent,
     session: Session | null,
   ) => void,
 ): AuthSubscription {
   const sb = getSupabaseClient();
+
   const { data } = sb.auth.onAuthStateChange(callback);
+
   return data.subscription;
 }
