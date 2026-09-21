@@ -95,8 +95,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   try {
     profile = await getProfileById(auth.id);
-  } catch (error) {
-    logger.warn('Failed to load profile for current user', error);
+  } catch {
+    logger.warn('Failed to load profile for current user');
   }
 
   return {
