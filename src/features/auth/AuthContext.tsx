@@ -12,7 +12,6 @@ import type { Session, User } from '@supabase/supabase-js';
 
 import { getProfileById } from '@/services/profiles.service';
 import {
-  getCurrentAuthUser,
   onAuthStateChange,
   resetPassword as resetPasswordService,
   signIn as signInService,
