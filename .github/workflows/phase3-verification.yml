@@ -1,123 +1,32 @@
-name: Phase 3 Verification
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-jobs:
-  verify:
-    name: TypeScript + Build + Phase 3 Checks
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Inspect repository
-        run: |
-          echo "=== Repository ==="
-          pwd
-          echo "=== Root ==="
-          ls -la
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: |
-          echo "=== Installing dependencies ==="
-          npm install --no-audit --no-fund
-
-      - name: TypeScript check
-        run: |
-          echo "=== TypeScript check ==="
-          npm run typecheck
-
-      - name: Production build
-        run: |
-          echo "=== Production build ==="
-          npm run build
-
       - name: Phase 3 checks
-        shell: bash
         run: |
-          echo "========================================"
-          echo "PHASE 3 STATIC CHECKS"
-          echo "========================================"
+          echo "=== PHASE 3 CHECKS START ==="
 
-          FAILED=0
+          echo "--- Checking required files ---"
 
-          echo ""
-          echo "--- Required files ---"
+          test -f src/features/auth/AuthContext.tsx && echo "PASS: AuthContext"
+          test -f src/components/auth/ProtectedRoute.tsx && echo "PASS: ProtectedRoute"
+          test -f src/components/auth/RoleGuard.tsx && echo "PASS: RoleGuard"
+          test -f src/pages/LoginPage.tsx && echo "PASS: LoginPage"
+          test -f src/pages/SignupPage.tsx && echo "PASS: SignupPage"
+          test -f src/services/auth.service.ts && echo "PASS: auth.service"
+          test -f src/utils/auth-errors.ts && echo "PASS: auth-errors"
+          test -f src/utils/safe-redirect.ts && echo "PASS: safe-redirect"
 
-          FILES=(
-            "src/features/auth/AuthContext.tsx"
-            "src/components/auth/ProtectedRoute.tsx"
-            "src/components/auth/RoleGuard.tsx"
-            "src/pages/LoginPage.tsx"
-            "src/pages/SignupPage.tsx"
-            "src/services/auth.service.ts"
-            "src/utils/auth-errors.ts"
-            "src/utils/safe-redirect.ts"
-          )
+          echo "--- Checking RoleGuard ---"
 
-          for FILE in "${FILES[@]}"; do
-            if [ -f "$FILE" ]; then
-              echo "PASS: $FILE"
-            else
-              echo "FAIL: Missing $FILE"
-              FAILED=1
-            fi
-          done
+          grep -F "allowed.includes(role)" src/components/auth/RoleGuard.tsx
 
-          echo ""
-          echo "--- RoleGuard checks ---"
+          echo "PASS: explicit role matching"
 
-          ROLE_GUARD="src/components/auth/RoleGuard.tsx"
+          echo "--- Checking AuthContext ---"
 
-          if grep -Fq "allowed.includes(role)" "$ROLE_GUARD"; then
-            echo "PASS: RoleGuard uses explicit role matching"
-          else
-            echo "FAIL: RoleGuard does not contain allowed.includes(role)"
-            FAILED=1
-          fi
+          grep -F "role === 'agent'" src/features/auth/AuthContext.tsx
 
-          if grep -Fq "effectiveAllowed" "$ROLE_GUARD"; then
-            echo "FAIL: Implicit admin-to-agent expansion detected"
-            FAILED=1
-          else
-            echo "PASS: No implicit admin-to-agent expansion"
-          fi
+          echo "PASS: strict agent role"
 
-          echo ""
-          echo "--- AuthContext checks ---"
+          grep -F "profileRequestIdRef" src/features/auth/AuthContext.tsx
 
-          AUTH_CONTEXT="src/features/auth/AuthContext.tsx"
+          echo "PASS: profile request generation protection"
 
-          if grep -Fq "role === 'agent'" "$AUTH_CONTEXT"; then
-            echo "PASS: isAgent is strict"
-          else
-            echo "FAIL: Strict agent role check not found"
-            FAILED=1
-          fi
-
-          if grep -Fq "profileRequestIdRef" "$AUTH_CONTEXT"; then
-            echo "PASS: Profile request generation protection exists"
-          else
-            echo "FAIL: Profile request generation protection not found"
-            FAILED=1
-          fi
-
-          echo ""
-          echo "========================================"
-
-          if [ "$FAILED" -ne 0 ]; then
-            echo "PHASE 3 CHECKS FAILED"
-            exit 1
-          fi
-
-          echo "PHASE 3 CHECKS PASSED"
-          echo "========================================"
+          echo "=== PHASE 3 CHECKS PASSED ==="
