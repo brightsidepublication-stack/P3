@@ -42,4 +42,53 @@ jobs:
           npm run build
 
       - name: Phase 3 checks
-        run: echo "PHASE 3 CHECKS RUNNING"
+        run: |
+          echo "=== PHASE 3 CHECKS START ==="
+
+          echo "--- Required files ---"
+
+          test -f src/features/auth/AuthContext.tsx
+          echo "PASS: AuthContext"
+
+          test -f src/components/auth/ProtectedRoute.tsx
+          echo "PASS: ProtectedRoute"
+
+          test -f src/components/auth/RoleGuard.tsx
+          echo "PASS: RoleGuard"
+
+          test -f src/pages/LoginPage.tsx
+          echo "PASS: LoginPage"
+
+          test -f src/pages/SignupPage.tsx
+          echo "PASS: SignupPage"
+
+          test -f src/services/auth.service.ts
+          echo "PASS: auth.service"
+
+          test -f src/utils/auth-errors.ts
+          echo "PASS: auth-errors"
+
+          test -f src/utils/safe-redirect.ts
+          echo "PASS: safe-redirect"
+
+          echo "--- RoleGuard ---"
+
+          grep -F "allowed.includes(role)" src/components/auth/RoleGuard.tsx
+          echo "PASS: explicit role matching"
+
+          if grep -Fq "effectiveAllowed" src/components/auth/RoleGuard.tsx; then
+            echo "FAIL: implicit admin-to-agent expansion detected"
+            exit 1
+          fi
+
+          echo "PASS: no implicit admin-to-agent expansion"
+
+          echo "--- AuthContext ---"
+
+          grep -F "role === 'agent'" src/features/auth/AuthContext.tsx
+          echo "PASS: strict agent role"
+
+          grep -F "profileRequestIdRef" src/features/auth/AuthContext.tsx
+          echo "PASS: profile request generation protection"
+
+          echo "=== PHASE 3 CHECKS PASSED ==="
