@@ -4,7 +4,7 @@ import { getProfileById } from './profiles.service';
 import { toAppError } from '@/lib/errors';
 import { mapAuthError } from '@/utils/auth-errors';
 import { logger } from '@/lib/logger';
-import type { AuthUser, UserProfile } from '@/types/user.types';
+import type { AuthUser, UserProfile } from '@/types/auth.types';
 
 /**
  * Auth service — Phase 3.
