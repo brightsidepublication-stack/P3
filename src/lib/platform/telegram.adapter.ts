@@ -13,9 +13,6 @@ export const telegramAdapter: PlatformAdapter = {
   },
 
   isAvailable(): boolean {
-    return (
-      typeof window !== 'undefined' &&
-      typeof window.Telegram !== 'undefined'
-    );
+    return false;
   },
 };
