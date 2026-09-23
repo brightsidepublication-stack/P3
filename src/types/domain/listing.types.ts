@@ -14,7 +14,8 @@ export type TransactionType =
 
 export type AdvertiserType =
   | 'OWNER'
-  | 'AGENT';
+  | 'AGENT'
+  | 'AUTHORIZED_REPRESENTATIVE';
 
 export type ListingStatus =
   | 'DRAFT'
