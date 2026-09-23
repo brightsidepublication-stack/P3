@@ -24,6 +24,18 @@ export interface FeatureDefinition extends Timestamps {
   sortOrder: number;
 }
 
+export interface FeatureOption extends Timestamps {
+  id: UUID;
+
+  featureDefinitionId: UUID;
+
+  value: string;
+  label: string;
+
+  sortOrder: number;
+  isActive: boolean;
+}
+
 export interface PropertyFeatureValue extends Timestamps {
   id: UUID;
 
