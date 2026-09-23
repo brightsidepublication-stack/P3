@@ -48,19 +48,31 @@ export interface LegalDocument extends Timestamps {
 
   issueDate: ISODateString | null;
 
-  ownershipType: OwnershipType | null;
+  verificationStatus:
+    | 'UNVERIFIED'
+    | 'PENDING'
+    | 'VERIFIED'
+    | 'REJECTED';
+}
 
-  registrationMainNumber: string | null;
-  registrationSubNumber: string | null;
+export interface PropertyRegistration extends Timestamps {
+  id: UUID;
+  propertyId: UUID;
+
+  mainNumber: string | null;
+  subNumber: string | null;
   registrationSection: string | null;
   parcelNumber: string | null;
+}
 
-  hasBuildingPermit: boolean | null;
-  hasCompletionCertificate: boolean | null;
-  hasSubdivisionPlan: boolean | null;
-  hasSeparateDeed: boolean | null;
+export interface BuildingDocument extends Timestamps {
+  id: UUID;
+  propertyId: UUID;
 
-  verificationStatus: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED';
+  buildingPermit: boolean | null;
+  completionCertificate: boolean | null;
+  subdivisionPlan: boolean | null;
+  separateDeed: boolean | null;
 }
 
 export interface PropertyLegalStatus extends Timestamps {
@@ -79,6 +91,7 @@ export interface PropertyOwner extends Timestamps {
   propertyId: UUID;
   userId: UUID;
 
+  ownershipType: OwnershipType | null;
   ownershipShare: number | null;
 
   verificationStatus:
