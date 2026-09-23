@@ -69,19 +69,6 @@ export interface ProjectUnit extends Timestamps {
   status: ProjectUnitStatus;
 }
 
-export interface ProjectProgress extends Timestamps {
-  id: UUID;
-  projectId: UUID;
-
-  stage: ConstructionStage;
-
-  declaredPercentage: number | null;
-
-  lastUpdateAt: string | null;
-
-  description: string | null;
-}
-
 export interface ProjectUnitPricing extends Timestamps {
   id: UUID;
   projectUnitId: UUID;
@@ -105,4 +92,40 @@ export interface PaymentScheduleItem extends Timestamps {
   milestone: ConstructionStage | null;
 
   sortOrder: number;
+}
+
+export interface ProjectProgress extends Timestamps {
+  id: UUID;
+  projectId: UUID;
+
+  stage: ConstructionStage;
+
+  declaredPercentage: number | null;
+
+  lastUpdateAt: string | null;
+
+  description: string | null;
+}
+
+export type ProjectDocumentType =
+  | 'PERMIT'
+  | 'LAND_DOCUMENT'
+  | 'PLAN'
+  | 'LICENSE'
+  | 'CONTRACT'
+  | 'OTHER';
+
+export interface ProjectDocument extends Timestamps {
+  id: UUID;
+  projectId: UUID;
+
+  documentType: ProjectDocumentType;
+
+  title: string;
+
+  storagePath: string;
+
+  description: string | null;
+
+  isPublic: boolean;
 }
