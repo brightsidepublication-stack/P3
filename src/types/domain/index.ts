@@ -12,3 +12,5 @@ export * from './project.types';
 export * from './partnership.types';
 export * from './contact.types';
 export * from './audit.types';
+export * from './favorite.types';
+export * from './report.types';
