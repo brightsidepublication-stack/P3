@@ -37,10 +37,26 @@ export interface Listing extends Timestamps {
 
   propertyId: UUID;
 
+  /**
+   * User who created/submitted the listing.
+   */
   createdBy: UUID;
+
+  /**
+   * Registered user responsible for advertising the property.
+   * This may differ from createdBy.
+   */
+  advertiserUserId: UUID;
+
   advertiserType: AdvertiserType;
 
   transactionType: TransactionType;
+
+  /**
+   * Optional project references for project/presale listings.
+   */
+  projectId: UUID | null;
+  projectUnitId: UUID | null;
 
   title: string;
   description: string | null;
