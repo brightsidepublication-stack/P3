@@ -89,7 +89,22 @@ export interface PropertyLegalStatus extends Timestamps {
 export interface PropertyOwner extends Timestamps {
   id: UUID;
   propertyId: UUID;
-  userId: UUID;
+
+  /**
+   * Optional link to a registered platform user.
+   * A property owner does not have to be a platform member.
+   */
+  userId: UUID | null;
+
+  ownerType:
+    | 'PERSON'
+    | 'LEGAL_ENTITY';
+
+  /**
+   * Display/reference name of the owner.
+   * Sensitive identity information should not be stored here unnecessarily.
+   */
+  displayName: string;
 
   ownershipType: OwnershipType | null;
   ownershipShare: number | null;
