@@ -1739,3 +1739,691 @@ CREATE TABLE public.listing_prices (
   CONSTRAINT listing_prices_monthly_rent_check
     CHECK (monthly_rent IS NULL OR monthly_rent >= 0)
 );
+
+CREATE TABLE public.listing_media (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  listing_id uuid NOT NULL
+    REFERENCES public.listings(id)
+    ON DELETE CASCADE,
+
+  storage_path text NOT NULL,
+
+  public_url text,
+
+  media_type public.listing_media_type
+    NOT NULL,
+
+  sort_order integer
+    NOT NULL DEFAULT 0,
+
+  is_primary boolean
+    NOT NULL DEFAULT false,
+
+  created_at timestamptz
+    NOT NULL DEFAULT now(),
+
+  CONSTRAINT listing_media_storage_path_not_blank
+    CHECK (length(trim(storage_path)) > 0),
+
+  CONSTRAINT listing_media_sort_order_check
+    CHECK (sort_order >= 0)
+);
+
+CREATE TABLE public.listing_status_history (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  listing_id uuid NOT NULL
+    REFERENCES public.listings(id)
+    ON DELETE CASCADE,
+
+  from_status public.listing_status,
+
+  to_status public.listing_status
+    NOT NULL,
+
+  changed_by uuid
+    REFERENCES public.profiles(id)
+    ON DELETE SET NULL,
+
+  reason text,
+
+  created_at timestamptz
+    NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.short_term_details (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  listing_id uuid NOT NULL UNIQUE
+    REFERENCES public.listings(id)
+    ON DELETE CASCADE,
+
+  property_type public.short_term_property_type
+    NOT NULL,
+
+  capacity integer,
+
+  beds integer,
+
+  rooms integer,
+
+  bathrooms integer,
+
+  price_per_night numeric(18,2),
+
+  price_per_week numeric(18,2),
+
+  price_per_month numeric(18,2),
+
+  min_nights integer,
+
+  max_nights integer,
+
+  check_in_time time,
+
+  check_out_time time,
+
+  amenities jsonb
+    NOT NULL DEFAULT '{}'::jsonb,
+
+  house_rules jsonb
+    NOT NULL DEFAULT '{}'::jsonb,
+
+  created_at timestamptz
+    NOT NULL DEFAULT now(),
+
+  updated_at timestamptz
+    NOT NULL DEFAULT now(),
+
+  CONSTRAINT short_term_capacity_check
+    CHECK (capacity IS NULL OR capacity >= 0),
+
+  CONSTRAINT short_term_beds_check
+    CHECK (beds IS NULL OR beds >= 0),
+
+  CONSTRAINT short_term_rooms_check
+    CHECK (rooms IS NULL OR rooms >= 0),
+
+  CONSTRAINT short_term_bathrooms_check
+    CHECK (bathrooms IS NULL OR bathrooms >= 0),
+
+  CONSTRAINT short_term_nightly_price_check
+    CHECK (price_per_night IS NULL OR price_per_night >= 0),
+
+  CONSTRAINT short_term_weekly_price_check
+    CHECK (price_per_week IS NULL OR price_per_week >= 0),
+
+  CONSTRAINT short_term_monthly_price_check
+    CHECK (price_per_month IS NULL OR price_per_month >= 0),
+
+  CONSTRAINT short_term_min_nights_check
+    CHECK (min_nights IS NULL OR min_nights > 0),
+
+  CONSTRAINT short_term_max_nights_check
+    CHECK (max_nights IS NULL OR max_nights > 0),
+
+  CONSTRAINT short_term_nights_range_check
+    CHECK (
+      min_nights IS NULL
+      OR max_nights IS NULL
+      OR max_nights >= min_nights
+    )
+);
+
+-- ============================================================
+-- Updated-at triggers
+-- IMPORTANT:
+-- listing_media intentionally has NO updated_at column,
+-- so NO updated_at trigger is created for listing_media.
+-- ============================================================
+
+CREATE TRIGGER set_listings_updated_at
+BEFORE UPDATE ON public.listings
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_listing_representations_updated_at
+BEFORE UPDATE ON public.listing_representations
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_listing_prices_updated_at
+BEFORE UPDATE ON public.listing_prices
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_short_term_details_updated_at
+BEFORE UPDATE ON public.short_term_details
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE INDEX idx_listings_property_id
+  ON public.listings(property_id);
+
+CREATE INDEX idx_listings_created_by
+  ON public.listings(created_by);
+
+CREATE INDEX idx_listings_advertiser_user_id
+  ON public.listings(advertiser_user_id);
+
+CREATE INDEX idx_listings_project_id
+  ON public.listings(project_id);
+
+CREATE INDEX idx_listings_project_unit_id
+  ON public.listings(project_unit_id);
+
+CREATE INDEX idx_listings_kind
+  ON public.listings(listing_kind);
+
+CREATE INDEX idx_listings_transaction_type
+  ON public.listings(transaction_type);
+
+CREATE INDEX idx_listings_status
+  ON public.listings(status);
+
+CREATE INDEX idx_listings_result
+  ON public.listings(result);
+
+CREATE INDEX idx_listings_visibility
+  ON public.listings(visibility);
+
+CREATE INDEX idx_listing_representations_listing_id
+  ON public.listing_representations(listing_id);
+
+CREATE INDEX idx_listing_representations_owner_id
+  ON public.listing_representations(property_owner_id);
+
+CREATE INDEX idx_listing_representations_representative_id
+  ON public.listing_representations(representative_user_id);
+
+CREATE INDEX idx_listing_representations_status
+  ON public.listing_representations(status);
+
+CREATE INDEX idx_listing_media_listing_id
+  ON public.listing_media(listing_id);
+
+CREATE INDEX idx_listing_media_sort_order
+  ON public.listing_media(listing_id, sort_order);
+
+CREATE INDEX idx_listing_status_history_listing_id
+  ON public.listing_status_history(listing_id);
+
+CREATE INDEX idx_listing_status_history_created_at
+  ON public.listing_status_history(created_at);
+
+CREATE INDEX idx_short_term_details_listing_id
+  ON public.short_term_details(listing_id);
+
+-- ============================================================
+-- 14. USER OPERATIONS
+-- ============================================================
+
+CREATE TABLE public.favorites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id uuid NOT NULL
+    REFERENCES public.profiles(id)
+    ON DELETE CASCADE,
+
+  listing_id uuid NOT NULL
+    REFERENCES public.listings(id)
+    ON DELETE CASCADE,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT favorites_user_listing_unique
+    UNIQUE (user_id, listing_id)
+);
+
+CREATE TABLE public.contact_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  listing_id uuid NOT NULL
+    REFERENCES public.listings(id)
+    ON DELETE CASCADE,
+
+  requester_user_id uuid NOT NULL
+    REFERENCES public.profiles(id)
+    ON DELETE CASCADE,
+
+  advertiser_user_id uuid
+    REFERENCES public.profiles(id)
+    ON DELETE SET NULL,
+
+  method public.contact_method
+    NOT NULL,
+
+  message text,
+
+  status public.contact_request_status
+    NOT NULL DEFAULT 'pending',
+
+  responded_at timestamptz,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.listing_reports (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  listing_id uuid NOT NULL
+    REFERENCES public.listings(id)
+    ON DELETE CASCADE,
+
+  reporter_user_id uuid NOT NULL
+    REFERENCES public.profiles(id)
+    ON DELETE CASCADE,
+
+  reason public.listing_report_reason
+    NOT NULL,
+
+  description text,
+
+  status public.listing_report_status
+    NOT NULL DEFAULT 'pending',
+
+  reviewed_by uuid
+    REFERENCES public.profiles(id)
+    ON DELETE SET NULL,
+
+  reviewed_at timestamptz,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER set_contact_requests_updated_at
+BEFORE UPDATE ON public.contact_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_listing_reports_updated_at
+BEFORE UPDATE ON public.listing_reports
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE INDEX idx_favorites_user_id
+  ON public.favorites(user_id);
+
+CREATE INDEX idx_favorites_listing_id
+  ON public.favorites(listing_id);
+
+CREATE INDEX idx_favorites_created_at
+  ON public.favorites(created_at);
+
+CREATE INDEX idx_contact_requests_listing_id
+  ON public.contact_requests(listing_id);
+
+CREATE INDEX idx_contact_requests_requester_user_id
+  ON public.contact_requests(requester_user_id);
+
+CREATE INDEX idx_contact_requests_advertiser_user_id
+  ON public.contact_requests(advertiser_user_id);
+
+CREATE INDEX idx_contact_requests_status
+  ON public.contact_requests(status);
+
+CREATE INDEX idx_contact_requests_created_at
+  ON public.contact_requests(created_at);
+
+CREATE INDEX idx_listing_reports_listing_id
+  ON public.listing_reports(listing_id);
+
+CREATE INDEX idx_listing_reports_reporter_user_id
+  ON public.listing_reports(reporter_user_id);
+
+CREATE INDEX idx_listing_reports_status
+  ON public.listing_reports(status);
+
+CREATE INDEX idx_listing_reports_created_at
+  ON public.listing_reports(created_at);
+
+-- ============================================================
+-- 15. PLATFORM LEGAL DOCUMENTS & ACCEPTANCES
+-- ============================================================
+
+CREATE TABLE public.platform_legal_documents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  document_type public.platform_legal_document_type
+    NOT NULL,
+
+  version text NOT NULL,
+
+  content text NOT NULL,
+
+  is_active boolean
+    NOT NULL DEFAULT false,
+
+  requires_reacceptance boolean
+    NOT NULL DEFAULT true,
+
+  published_at timestamptz,
+
+  created_at timestamptz
+    NOT NULL DEFAULT now(),
+
+  CONSTRAINT platform_legal_documents_version_not_blank
+    CHECK (length(trim(version)) > 0),
+
+  CONSTRAINT platform_legal_documents_content_not_blank
+    CHECK (length(trim(content)) > 0),
+
+  CONSTRAINT platform_legal_documents_type_version_unique
+    UNIQUE (document_type, version)
+);
+
+CREATE TABLE public.terms_acceptances (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id uuid NOT NULL
+    REFERENCES public.profiles(id)
+    ON DELETE CASCADE,
+
+  platform_legal_document_id uuid NOT NULL
+    REFERENCES public.platform_legal_documents(id)
+    ON DELETE RESTRICT,
+
+  acceptance_context public.acceptance_context
+    NOT NULL,
+
+  accepted_at timestamptz
+    NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_platform_legal_documents_type
+  ON public.platform_legal_documents(document_type);
+
+CREATE INDEX idx_platform_legal_documents_active
+  ON public.platform_legal_documents(is_active);
+
+CREATE INDEX idx_platform_legal_documents_published_at
+  ON public.platform_legal_documents(published_at);
+
+CREATE INDEX idx_terms_acceptances_user_id
+  ON public.terms_acceptances(user_id);
+
+CREATE INDEX idx_terms_acceptances_document_id
+  ON public.terms_acceptances(platform_legal_document_id);
+
+CREATE INDEX idx_terms_acceptances_accepted_at
+  ON public.terms_acceptances(accepted_at);
+
+CREATE INDEX idx_terms_acceptances_context
+  ON public.terms_acceptances(acceptance_context);
+
+-- ============================================================
+-- 16. AUDIT LOG
+-- ============================================================
+
+CREATE TABLE public.audit_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  actor_user_id uuid
+    REFERENCES public.profiles(id)
+    ON DELETE SET NULL,
+
+  action public.audit_action
+    NOT NULL,
+
+  entity_type text NOT NULL,
+
+  entity_id uuid,
+
+  old_data jsonb,
+
+  new_data jsonb,
+
+  created_at timestamptz
+    NOT NULL DEFAULT now(),
+
+  CONSTRAINT audit_logs_entity_type_not_blank
+    CHECK (length(trim(entity_type)) > 0)
+);
+
+CREATE INDEX idx_audit_logs_actor_user_id
+  ON public.audit_logs(actor_user_id);
+
+CREATE INDEX idx_audit_logs_action
+  ON public.audit_logs(action);
+
+CREATE INDEX idx_audit_logs_entity
+  ON public.audit_logs(entity_type, entity_id);
+
+CREATE INDEX idx_audit_logs_created_at
+  ON public.audit_logs(created_at);
+
+-- ============================================================
+-- 17. DATA INTEGRITY / CROSS-REFERENCE CONSTRAINTS
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- Partnership allocation must belong to a party from
+-- the same partnership.
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_partnership_allocation_party()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  party_partnership_id uuid;
+BEGIN
+  SELECT partnership_id
+  INTO party_partnership_id
+  FROM public.partnership_parties
+  WHERE id = NEW.party_id;
+
+  IF party_partnership_id IS NULL THEN
+    RAISE EXCEPTION 'Partnership party does not exist';
+  END IF;
+
+  IF party_partnership_id <> NEW.partnership_id THEN
+    RAISE EXCEPTION
+      'Partnership allocation and party must belong to the same partnership';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_partnership_allocation_party_trigger
+BEFORE INSERT OR UPDATE ON public.partnership_allocations
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_partnership_allocation_party();
+
+-- ------------------------------------------------------------
+-- Project unit must reference a project that matches the
+-- listing project when both are provided.
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_listing_project_unit()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  unit_project_id uuid;
+BEGIN
+  IF NEW.project_unit_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT project_id
+  INTO unit_project_id
+  FROM public.project_units
+  WHERE id = NEW.project_unit_id;
+
+  IF unit_project_id IS NULL THEN
+    RAISE EXCEPTION 'Project unit does not exist';
+  END IF;
+
+  IF NEW.project_id IS NULL THEN
+    NEW.project_id := unit_project_id;
+  ELSIF NEW.project_id <> unit_project_id THEN
+    RAISE EXCEPTION
+      'Listing project and project unit project must match';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_listing_project_unit_trigger
+BEFORE INSERT OR UPDATE ON public.listings
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_listing_project_unit();
+
+-- ------------------------------------------------------------
+-- Short-term details may only belong to a short-term listing.
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_short_term_listing()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  current_listing_kind public.listing_kind;
+BEGIN
+  SELECT listing_kind
+  INTO current_listing_kind
+  FROM public.listings
+  WHERE id = NEW.listing_id;
+
+  IF current_listing_kind IS NULL THEN
+    RAISE EXCEPTION 'Listing does not exist';
+  END IF;
+
+  IF current_listing_kind <> 'short_term' THEN
+    RAISE EXCEPTION
+      'Short-term details require a short-term listing';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_short_term_listing_trigger
+BEFORE INSERT OR UPDATE ON public.short_term_details
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_short_term_listing();
+
+-- ------------------------------------------------------------
+-- A short-term listing requires details before publication.
+--
+-- IMPORTANT:
+-- This trigger is UPDATE-only because the listing row must
+-- exist before short_term_details can be inserted.
+-- Workflow:
+-- draft listing → short_term_details → publish/update
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_published_short_term_listing()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND NEW.status = 'published'
+     AND NEW.listing_kind = 'short_term'
+     AND NOT EXISTS (
+       SELECT 1
+       FROM public.short_term_details
+       WHERE listing_id = NEW.id
+     )
+  THEN
+    RAISE EXCEPTION
+      'Published short-term listing requires short-term details';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_published_short_term_listing_trigger
+BEFORE UPDATE ON public.listings
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_published_short_term_listing();
+
+-- ------------------------------------------------------------
+-- Only published listings may be publicly visible.
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_listing_visibility()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF NEW.visibility = 'public'
+     AND NEW.status <> 'published'
+  THEN
+    RAISE EXCEPTION
+      'Only published listings may be publicly visible';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_listing_visibility_trigger
+BEFORE INSERT OR UPDATE ON public.listings
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_listing_visibility();
+
+-- ------------------------------------------------------------
+-- Listing representation must reference a property owner
+-- belonging to the same property as the listing.
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_listing_representation_owner()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  listing_property_id uuid;
+  owner_property_id uuid;
+BEGIN
+  IF NEW.property_owner_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT property_id
+  INTO listing_property_id
+  FROM public.listings
+  WHERE id = NEW.listing_id;
+
+  IF listing_property_id IS NULL THEN
+    RAISE EXCEPTION 'Listing does not exist';
+  END IF;
+
+  SELECT property_id
+  INTO owner_property_id
+  FROM public.property_owners
+  WHERE id = NEW.property_owner_id;
+
+  IF owner_property_id IS NULL THEN
+    RAISE EXCEPTION 'Property owner does not exist';
+  END IF;
+
+  IF owner_property_id <> listing_property_id THEN
+    RAISE EXCEPTION
+      'Listing representation owner must belong to the same property as the listing';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_listing_representation_owner_trigger
+BEFORE INSERT OR UPDATE ON public.listing_representations
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_listing_representation_owner();
+
+-- ============================================================
+-- END OF PHASE 5 DOMAIN SCHEMA
+-- ============================================================
+
+COMMIT;
