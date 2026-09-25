@@ -457,3 +457,134 @@ CREATE INDEX idx_property_categories_parent_id
 
 CREATE INDEX idx_property_categories_active_sort
   ON public.property_categories(is_active, sort_order);
+
+-- ============================================================
+-- 6. FEATURE SYSTEM
+-- Definitions → Options → Property Values
+-- ============================================================
+
+CREATE TABLE public.feature_definitions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  category_id uuid
+    REFERENCES public.property_categories(id)
+    ON DELETE SET NULL,
+
+  key text NOT NULL,
+  label text NOT NULL,
+
+  value_type public.feature_value_type NOT NULL,
+
+  is_searchable boolean NOT NULL DEFAULT false,
+  is_filterable boolean NOT NULL DEFAULT false,
+  is_active boolean NOT NULL DEFAULT true,
+
+  sort_order integer NOT NULL DEFAULT 0,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT feature_definitions_key_unique
+    UNIQUE (key),
+
+  CONSTRAINT feature_definitions_sort_order_check
+    CHECK (sort_order >= 0)
+);
+
+CREATE TABLE public.feature_options (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  feature_id uuid NOT NULL
+    REFERENCES public.feature_definitions(id)
+    ON DELETE CASCADE,
+
+  value text NOT NULL,
+  label text NOT NULL,
+
+  sort_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT feature_options_feature_value_unique
+    UNIQUE (feature_id, value),
+
+  CONSTRAINT feature_options_sort_order_check
+    CHECK (sort_order >= 0)
+);
+
+CREATE TABLE public.property_feature_values (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  property_id uuid NOT NULL,
+
+  feature_id uuid NOT NULL
+    REFERENCES public.feature_definitions(id)
+    ON DELETE CASCADE,
+
+  boolean_value boolean,
+  number_value numeric,
+  text_value text,
+  selected_values jsonb,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT property_feature_values_property_feature_unique
+    UNIQUE (property_id, feature_id),
+
+  CONSTRAINT property_feature_values_has_value
+    CHECK (
+      boolean_value IS NOT NULL
+      OR number_value IS NOT NULL
+      OR text_value IS NOT NULL
+      OR selected_values IS NOT NULL
+    )
+);
+
+-- ============================================================
+-- Updated-at triggers
+-- ============================================================
+
+CREATE TRIGGER set_feature_definitions_updated_at
+BEFORE UPDATE ON public.feature_definitions
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_feature_options_updated_at
+BEFORE UPDATE ON public.feature_options
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_property_feature_values_updated_at
+BEFORE UPDATE ON public.property_feature_values
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+-- ============================================================
+-- Indexes
+-- ============================================================
+
+CREATE INDEX idx_feature_definitions_category_id
+  ON public.feature_definitions(category_id);
+
+CREATE INDEX idx_feature_definitions_searchable
+  ON public.feature_definitions(is_searchable)
+  WHERE is_searchable = true;
+
+CREATE INDEX idx_feature_definitions_filterable
+  ON public.feature_definitions(is_filterable)
+  WHERE is_filterable = true;
+
+CREATE INDEX idx_feature_definitions_active_sort
+  ON public.feature_definitions(is_active, sort_order);
+
+CREATE INDEX idx_feature_options_feature_id
+  ON public.feature_options(feature_id);
+
+CREATE INDEX idx_property_feature_values_property_id
+  ON public.property_feature_values(property_id);
+
+CREATE INDEX idx_property_feature_values_feature_id
+  ON public.property_feature_values(feature_id);
