@@ -326,3 +326,135 @@ END;
 $$;
 
 COMMIT;
+
+-- ============================================================
+-- 4. GEOGRAPHY
+-- Province → City → District → Neighborhood
+-- ============================================================
+
+CREATE TABLE public.provinces (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.cities (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  province_id uuid NOT NULL
+    REFERENCES public.provinces(id)
+    ON DELETE RESTRICT,
+  name text NOT NULL,
+  slug text NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT cities_province_slug_unique
+    UNIQUE (province_id, slug)
+);
+
+CREATE TABLE public.districts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  city_id uuid NOT NULL
+    REFERENCES public.cities(id)
+    ON DELETE RESTRICT,
+  name text NOT NULL,
+  slug text NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT districts_city_slug_unique
+    UNIQUE (city_id, slug)
+);
+
+CREATE TABLE public.neighborhoods (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  district_id uuid NOT NULL
+    REFERENCES public.districts(id)
+    ON DELETE RESTRICT,
+  name text NOT NULL,
+  slug text NOT NULL,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT neighborhoods_district_slug_unique
+    UNIQUE (district_id, slug)
+);
+
+-- ============================================================
+-- Updated-at triggers
+-- ============================================================
+
+CREATE TRIGGER set_provinces_updated_at
+BEFORE UPDATE ON public.provinces
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_cities_updated_at
+BEFORE UPDATE ON public.cities
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_districts_updated_at
+BEFORE UPDATE ON public.districts
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TRIGGER set_neighborhoods_updated_at
+BEFORE UPDATE ON public.neighborhoods
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+
+-- ============================================================
+-- 5. PROPERTY CATEGORIES
+-- Dynamic taxonomy — no giant property-type enum
+-- ============================================================
+
+CREATE TABLE public.property_categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  parent_id uuid
+    REFERENCES public.property_categories(id)
+    ON DELETE RESTRICT,
+
+  name text NOT NULL,
+  slug text NOT NULL,
+  description text,
+
+  is_active boolean NOT NULL DEFAULT true,
+  sort_order integer NOT NULL DEFAULT 0,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT property_categories_slug_unique
+    UNIQUE (slug),
+
+  CONSTRAINT property_categories_sort_order_check
+    CHECK (sort_order >= 0)
+);
+
+-- ============================================================
+-- Updated-at trigger
+-- ============================================================
+
+CREATE TRIGGER set_property_categories_updated_at
+BEFORE UPDATE ON public.property_categories
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+-- ============================================================
+-- Indexes
+-- ============================================================
+
+CREATE INDEX idx_property_categories_parent_id
+  ON public.property_categories(parent_id);
+
+CREATE INDEX idx_property_categories_active_sort
+  ON public.property_categories(is_active, sort_order);
