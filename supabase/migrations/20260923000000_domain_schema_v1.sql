@@ -588,3 +588,152 @@ CREATE INDEX idx_property_feature_values_property_id
 
 CREATE INDEX idx_property_feature_values_feature_id
   ON public.property_feature_values(feature_id);
+
+-- ============================================================
+-- 7. PROPERTY CORE
+-- Property = the actual real-world property
+-- Listing = the advertisement for that property
+-- ============================================================
+
+CREATE TABLE public.properties (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  category_id uuid NOT NULL
+    REFERENCES public.property_categories(id)
+    ON DELETE RESTRICT,
+
+  title text NOT NULL,
+  description text,
+
+  -- Geography
+  province_id uuid NOT NULL
+    REFERENCES public.provinces(id)
+    ON DELETE RESTRICT,
+
+  city_id uuid NOT NULL
+    REFERENCES public.cities(id)
+    ON DELETE RESTRICT,
+
+  district_id uuid
+    REFERENCES public.districts(id)
+    ON DELETE RESTRICT,
+
+  neighborhood_id uuid
+    REFERENCES public.neighborhoods(id)
+    ON DELETE RESTRICT,
+
+  address text,
+
+  latitude numeric(9,6),
+  longitude numeric(9,6),
+
+  -- Physical information
+  land_area numeric(14,2),
+  building_area numeric(14,2),
+  year_built integer,
+
+  condition public.property_condition
+    NOT NULL DEFAULT 'other',
+
+  availability public.property_availability
+    NOT NULL DEFAULT 'unknown',
+
+  -- Core utilities and extensible property attributes
+  utilities jsonb
+    NOT NULL DEFAULT '{}'::jsonb,
+
+  flexible_attributes jsonb
+    NOT NULL DEFAULT '{}'::jsonb,
+
+  archived_at timestamptz,
+
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+
+  -- ==========================================================
+  -- Validation
+  -- ==========================================================
+
+  CONSTRAINT properties_title_not_blank
+    CHECK (length(trim(title)) > 0),
+
+  CONSTRAINT properties_land_area_check
+    CHECK (
+      land_area IS NULL
+      OR land_area >= 0
+    ),
+
+  CONSTRAINT properties_building_area_check
+    CHECK (
+      building_area IS NULL
+      OR building_area >= 0
+    ),
+
+  CONSTRAINT properties_year_built_check
+    CHECK (
+      year_built IS NULL
+      OR year_built BETWEEN 1000 AND 2500
+    ),
+
+  CONSTRAINT properties_latitude_check
+    CHECK (
+      latitude IS NULL
+      OR latitude BETWEEN -90 AND 90
+    ),
+
+  CONSTRAINT properties_longitude_check
+    CHECK (
+      longitude IS NULL
+      OR longitude BETWEEN -180 AND 180
+    )
+);
+
+-- ============================================================
+-- Updated-at trigger
+-- ============================================================
+
+CREATE TRIGGER set_properties_updated_at
+BEFORE UPDATE ON public.properties
+FOR EACH ROW
+EXECUTE FUNCTION public.set_updated_at();
+
+-- ============================================================
+-- Property indexes
+-- ============================================================
+
+CREATE INDEX idx_properties_category_id
+  ON public.properties(category_id);
+
+CREATE INDEX idx_properties_province_id
+  ON public.properties(province_id);
+
+CREATE INDEX idx_properties_city_id
+  ON public.properties(city_id);
+
+CREATE INDEX idx_properties_district_id
+  ON public.properties(district_id);
+
+CREATE INDEX idx_properties_neighborhood_id
+  ON public.properties(neighborhood_id);
+
+CREATE INDEX idx_properties_availability
+  ON public.properties(availability);
+
+CREATE INDEX idx_properties_condition
+  ON public.properties(condition);
+
+CREATE INDEX idx_properties_archived_at
+  ON public.properties(archived_at);
+
+CREATE INDEX idx_properties_location
+  ON public.properties(latitude, longitude);
+
+-- ============================================================
+-- Connect feature values to properties
+-- ============================================================
+
+ALTER TABLE public.property_feature_values
+  ADD CONSTRAINT property_feature_values_property_fk
+  FOREIGN KEY (property_id)
+  REFERENCES public.properties(id)
+  ON DELETE CASCADE;
