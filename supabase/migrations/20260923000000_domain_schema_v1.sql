@@ -2202,6 +2202,158 @@ CREATE INDEX idx_audit_logs_created_at
 -- ============================================================
 
 -- ------------------------------------------------------------
+-- Geography integrity:
+-- Province → City → District → Neighborhood
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_geography_hierarchy()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  parent_province_id uuid;
+  parent_city_id uuid;
+BEGIN
+  -- City must belong to its province.
+  IF TG_TABLE_NAME = 'cities' THEN
+    SELECT id
+    INTO parent_province_id
+    FROM public.provinces
+    WHERE id = NEW.province_id;
+
+    IF parent_province_id IS NULL THEN
+      RAISE EXCEPTION 'City province does not exist';
+    END IF;
+
+    RETURN NEW;
+  END IF;
+
+  -- District must belong to an existing city.
+  IF TG_TABLE_NAME = 'districts' THEN
+    SELECT id
+    INTO parent_city_id
+    FROM public.cities
+    WHERE id = NEW.city_id;
+
+    IF parent_city_id IS NULL THEN
+      RAISE EXCEPTION 'District city does not exist';
+    END IF;
+
+    RETURN NEW;
+  END IF;
+
+  -- Neighborhood must belong to an existing district.
+  IF TG_TABLE_NAME = 'neighborhoods' THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.districts
+      WHERE id = NEW.district_id
+    )
+    THEN
+      RAISE EXCEPTION 'Neighborhood district does not exist';
+    END IF;
+
+    RETURN NEW;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_cities_geography_trigger
+BEFORE INSERT OR UPDATE ON public.cities
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_geography_hierarchy();
+
+CREATE TRIGGER validate_districts_geography_trigger
+BEFORE INSERT OR UPDATE ON public.districts
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_geography_hierarchy();
+
+CREATE TRIGGER validate_neighborhoods_geography_trigger
+BEFORE INSERT OR UPDATE ON public.neighborhoods
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_geography_hierarchy();
+
+-- ------------------------------------------------------------
+-- Property geography must follow:
+-- province → city → district → neighborhood
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_property_geography()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  city_province_id uuid;
+  district_city_id uuid;
+  neighborhood_district_id uuid;
+BEGIN
+  -- City must belong to the selected province.
+  SELECT province_id
+  INTO city_province_id
+  FROM public.cities
+  WHERE id = NEW.city_id;
+
+  IF city_province_id IS NULL THEN
+    RAISE EXCEPTION 'Property city does not exist';
+  END IF;
+
+  IF city_province_id <> NEW.province_id THEN
+    RAISE EXCEPTION
+      'Property city must belong to the selected province';
+  END IF;
+
+  -- District, when provided, must belong to the selected city.
+  IF NEW.district_id IS NOT NULL THEN
+    SELECT city_id
+    INTO district_city_id
+    FROM public.districts
+    WHERE id = NEW.district_id;
+
+    IF district_city_id IS NULL THEN
+      RAISE EXCEPTION 'Property district does not exist';
+    END IF;
+
+    IF district_city_id <> NEW.city_id THEN
+      RAISE EXCEPTION
+        'Property district must belong to the selected city';
+    END IF;
+  END IF;
+
+  -- Neighborhood, when provided, must belong to the selected district.
+  IF NEW.neighborhood_id IS NOT NULL THEN
+
+    IF NEW.district_id IS NULL THEN
+      RAISE EXCEPTION
+        'Property neighborhood requires a district';
+    END IF;
+
+    SELECT district_id
+    INTO neighborhood_district_id
+    FROM public.neighborhoods
+    WHERE id = NEW.neighborhood_id;
+
+    IF neighborhood_district_id IS NULL THEN
+      RAISE EXCEPTION 'Property neighborhood does not exist';
+    END IF;
+
+    IF neighborhood_district_id <> NEW.district_id THEN
+      RAISE EXCEPTION
+        'Property neighborhood must belong to the selected district';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_property_geography_trigger
+BEFORE INSERT OR UPDATE ON public.properties
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_property_geography();
+
+-- ------------------------------------------------------------
 -- Partnership allocation must belong to a party from
 -- the same partnership.
 -- ------------------------------------------------------------
@@ -2278,6 +2430,45 @@ FOR EACH ROW
 EXECUTE FUNCTION public.validate_listing_project_unit();
 
 -- ------------------------------------------------------------
+-- Project unit and project block must belong to the same
+-- project.
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.validate_project_unit_block()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  block_project_id uuid;
+BEGIN
+  IF NEW.block_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT project_id
+  INTO block_project_id
+  FROM public.project_blocks
+  WHERE id = NEW.block_id;
+
+  IF block_project_id IS NULL THEN
+    RAISE EXCEPTION 'Project block does not exist';
+  END IF;
+
+  IF block_project_id <> NEW.project_id THEN
+    RAISE EXCEPTION
+      'Project unit and project block must belong to the same project';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER validate_project_unit_block_trigger
+BEFORE INSERT OR UPDATE ON public.project_units
+FOR EACH ROW
+EXECUTE FUNCTION public.validate_project_unit_block();
+
+-- ------------------------------------------------------------
 -- Short-term details may only belong to a short-term listing.
 -- ------------------------------------------------------------
 
@@ -2312,13 +2503,16 @@ FOR EACH ROW
 EXECUTE FUNCTION public.validate_short_term_listing();
 
 -- ------------------------------------------------------------
--- A short-term listing requires details before publication.
+-- A published short-term listing requires details.
 --
--- IMPORTANT:
--- This trigger is UPDATE-only because the listing row must
--- exist before short_term_details can be inserted.
 -- Workflow:
--- draft listing → short_term_details → publish/update
+-- draft listing
+--      ↓
+-- short_term_details
+--      ↓
+-- publish/update
+--
+-- Direct INSERT as published is blocked.
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION public.validate_published_short_term_listing()
@@ -2326,17 +2520,27 @@ RETURNS trigger
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF TG_OP = 'UPDATE'
-     AND NEW.status = 'published'
+  IF NEW.status = 'published'
      AND NEW.listing_kind = 'short_term'
-     AND NOT EXISTS (
-       SELECT 1
-       FROM public.short_term_details
-       WHERE listing_id = NEW.id
-     )
   THEN
-    RAISE EXCEPTION
-      'Published short-term listing requires short-term details';
+
+    -- A short-term listing must first exist as a draft.
+    IF TG_OP = 'INSERT' THEN
+      RAISE EXCEPTION
+        'Short-term listings must be created as draft before publication';
+    END IF;
+
+    -- On publication, details must already exist.
+    IF NOT EXISTS (
+      SELECT 1
+      FROM public.short_term_details
+      WHERE listing_id = NEW.id
+    )
+    THEN
+      RAISE EXCEPTION
+        'Published short-term listing requires short-term details';
+    END IF;
+
   END IF;
 
   RETURN NEW;
@@ -2344,7 +2548,7 @@ END;
 $$;
 
 CREATE TRIGGER validate_published_short_term_listing_trigger
-BEFORE UPDATE ON public.listings
+BEFORE INSERT OR UPDATE ON public.listings
 FOR EACH ROW
 EXECUTE FUNCTION public.validate_published_short_term_listing();
 
