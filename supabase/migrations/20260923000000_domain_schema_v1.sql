@@ -325,7 +325,6 @@ BEGIN
 END;
 $$;
 
-
 -- ============================================================
 -- 4. GEOGRAPHY
 -- Province → City → District → Neighborhood
@@ -385,10 +384,6 @@ CREATE TABLE public.neighborhoods (
     UNIQUE (district_id, slug)
 );
 
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
 CREATE TRIGGER set_provinces_updated_at
 BEFORE UPDATE ON public.provinces
 FOR EACH ROW
@@ -409,10 +404,8 @@ BEFORE UPDATE ON public.neighborhoods
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
 
-
 -- ============================================================
 -- 5. PROPERTY CATEGORIES
--- Dynamic taxonomy — no giant property-type enum
 -- ============================================================
 
 CREATE TABLE public.property_categories (
@@ -439,18 +432,10 @@ CREATE TABLE public.property_categories (
     CHECK (sort_order >= 0)
 );
 
--- ============================================================
--- Updated-at trigger
--- ============================================================
-
 CREATE TRIGGER set_property_categories_updated_at
 BEFORE UPDATE ON public.property_categories
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_property_categories_parent_id
   ON public.property_categories(parent_id);
@@ -460,7 +445,6 @@ CREATE INDEX idx_property_categories_active_sort
 
 -- ============================================================
 -- 6. FEATURE SYSTEM
--- Definitions → Options → Property Values
 -- ============================================================
 
 CREATE TABLE public.feature_definitions (
@@ -543,10 +527,6 @@ CREATE TABLE public.property_feature_values (
     )
 );
 
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
 CREATE TRIGGER set_feature_definitions_updated_at
 BEFORE UPDATE ON public.feature_definitions
 FOR EACH ROW
@@ -561,10 +541,6 @@ CREATE TRIGGER set_property_feature_values_updated_at
 BEFORE UPDATE ON public.property_feature_values
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_feature_definitions_category_id
   ON public.feature_definitions(category_id);
@@ -591,8 +567,6 @@ CREATE INDEX idx_property_feature_values_feature_id
 
 -- ============================================================
 -- 7. PROPERTY CORE
--- Property = the actual real-world property
--- Listing = the advertisement for that property
 -- ============================================================
 
 CREATE TABLE public.properties (
@@ -605,7 +579,6 @@ CREATE TABLE public.properties (
   title text NOT NULL,
   description text,
 
-  -- Geography
   province_id uuid NOT NULL
     REFERENCES public.provinces(id)
     ON DELETE RESTRICT,
@@ -627,7 +600,6 @@ CREATE TABLE public.properties (
   latitude numeric(9,6),
   longitude numeric(9,6),
 
-  -- Physical information
   land_area numeric(14,2),
   building_area numeric(14,2),
   year_built integer,
@@ -638,7 +610,6 @@ CREATE TABLE public.properties (
   availability public.property_availability
     NOT NULL DEFAULT 'unknown',
 
-  -- Core utilities and extensible property attributes
   utilities jsonb
     NOT NULL DEFAULT '{}'::jsonb,
 
@@ -649,10 +620,6 @@ CREATE TABLE public.properties (
 
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-
-  -- ==========================================================
-  -- Validation
-  -- ==========================================================
 
   CONSTRAINT properties_title_not_blank
     CHECK (length(trim(title)) > 0),
@@ -688,18 +655,10 @@ CREATE TABLE public.properties (
     )
 );
 
--- ============================================================
--- Updated-at trigger
--- ============================================================
-
 CREATE TRIGGER set_properties_updated_at
 BEFORE UPDATE ON public.properties
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Property indexes
--- ============================================================
 
 CREATE INDEX idx_properties_category_id
   ON public.properties(category_id);
@@ -728,10 +687,6 @@ CREATE INDEX idx_properties_archived_at
 CREATE INDEX idx_properties_location
   ON public.properties(latitude, longitude);
 
--- ============================================================
--- Connect feature values to properties
--- ============================================================
-
 ALTER TABLE public.property_feature_values
   ADD CONSTRAINT property_feature_values_property_fk
   FOREIGN KEY (property_id)
@@ -740,7 +695,6 @@ ALTER TABLE public.property_feature_values
 
 -- ============================================================
 -- 8. LAND
--- Property → Land → Land Parcels
 -- ============================================================
 
 CREATE TABLE public.lands (
@@ -802,10 +756,6 @@ CREATE TABLE public.land_parcels (
     CHECK (area > 0)
 );
 
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
 CREATE TRIGGER set_lands_updated_at
 BEFORE UPDATE ON public.lands
 FOR EACH ROW
@@ -815,10 +765,6 @@ CREATE TRIGGER set_land_parcels_updated_at
 BEFORE UPDATE ON public.land_parcels
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_land_parcels_land_id
   ON public.land_parcels(land_id);
@@ -837,7 +783,6 @@ CREATE INDEX idx_land_parcels_current_use
 
 -- ============================================================
 -- 9. BUILDINGS & PROPERTY UNITS
--- Property → Buildings → Units
 -- ============================================================
 
 CREATE TABLE public.buildings (
@@ -935,10 +880,6 @@ CREATE TABLE public.property_units (
     )
 );
 
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
 CREATE TRIGGER set_buildings_updated_at
 BEFORE UPDATE ON public.buildings
 FOR EACH ROW
@@ -948,10 +889,6 @@ CREATE TRIGGER set_property_units_updated_at
 BEFORE UPDATE ON public.property_units
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_buildings_property_id
   ON public.buildings(property_id);
@@ -1009,10 +946,6 @@ CREATE TABLE public.property_owners (
     )
 );
 
--- ============================================================
--- Property legal documents
--- ============================================================
-
 CREATE TABLE public.property_legal_documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1041,10 +974,6 @@ CREATE TABLE public.property_legal_documents (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- ============================================================
--- Property registration
--- ============================================================
-
 CREATE TABLE public.property_registration (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1060,10 +989,6 @@ CREATE TABLE public.property_registration (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
--- ============================================================
--- Building documents
--- ============================================================
 
 CREATE TABLE public.building_documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1095,10 +1020,6 @@ CREATE TABLE public.building_documents (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- ============================================================
--- Property legal status
--- ============================================================
-
 CREATE TABLE public.property_legal_status (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1120,10 +1041,6 @@ CREATE TABLE public.property_legal_status (
   CONSTRAINT property_legal_status_unique
     UNIQUE (property_id, status)
 );
-
--- ============================================================
--- Updated-at triggers
--- ============================================================
 
 CREATE TRIGGER set_property_owners_updated_at
 BEFORE UPDATE ON public.property_owners
@@ -1149,10 +1066,6 @@ CREATE TRIGGER set_property_legal_status_updated_at
 BEFORE UPDATE ON public.property_legal_status
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_property_owners_property_id
   ON public.property_owners(property_id);
@@ -1214,10 +1127,6 @@ CREATE TABLE public.projects (
     CHECK (length(trim(name)) > 0)
 );
 
--- ============================================================
--- Project blocks
--- ============================================================
-
 CREATE TABLE public.project_blocks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1251,10 +1160,6 @@ CREATE TABLE public.project_blocks (
       OR units_count >= 0
     )
 );
-
--- ============================================================
--- Project units
--- ============================================================
 
 CREATE TABLE public.project_units (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1320,11 +1225,6 @@ CREATE TABLE public.project_units (
     )
 );
 
--- ============================================================
--- Project unit pricing
--- Multiple rows allow price history
--- ============================================================
-
 CREATE TABLE public.project_unit_pricing (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1371,10 +1271,6 @@ CREATE TABLE public.project_unit_pricing (
     )
 );
 
--- ============================================================
--- Payment schedule
--- ============================================================
-
 CREATE TABLE public.payment_schedule_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1410,10 +1306,6 @@ CREATE TABLE public.payment_schedule_items (
     CHECK (sort_order >= 0)
 );
 
--- ============================================================
--- Project construction progress
--- ============================================================
-
 CREATE TABLE public.project_progress (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1440,10 +1332,6 @@ CREATE TABLE public.project_progress (
       )
     )
 );
-
--- ============================================================
--- Project documents
--- ============================================================
 
 CREATE TABLE public.project_documents (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1472,10 +1360,6 @@ CREATE TABLE public.project_documents (
     CHECK (length(trim(title)) > 0)
 );
 
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
 CREATE TRIGGER set_projects_updated_at
 BEFORE UPDATE ON public.projects
 FOR EACH ROW
@@ -1500,10 +1384,6 @@ CREATE TRIGGER set_project_documents_updated_at
 BEFORE UPDATE ON public.project_documents
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_projects_property_id
   ON public.projects(property_id);
@@ -1546,7 +1426,6 @@ CREATE INDEX idx_project_documents_verification_status
 
 -- ============================================================
 -- 12. CONSTRUCTION PARTNERSHIPS
--- Land Owner(s) ↔ Developer / Builder
 -- ============================================================
 
 CREATE TABLE public.construction_partnerships (
@@ -1566,11 +1445,6 @@ CREATE TABLE public.construction_partnerships (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-
--- ============================================================
--- Partnership parties
--- A party may be a registered user or a non-member.
--- ============================================================
 
 CREATE TABLE public.partnership_parties (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1608,11 +1482,6 @@ CREATE TABLE public.partnership_parties (
       (party_type = 'non_member' AND user_id IS NULL)
     )
 );
-
--- ============================================================
--- Partnership allocations
--- Allocation belongs to a party, not directly to a user.
--- ============================================================
 
 CREATE TABLE public.partnership_allocations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -1660,10 +1529,6 @@ CREATE TABLE public.partnership_allocations (
     )
 );
 
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
 CREATE TRIGGER set_construction_partnerships_updated_at
 BEFORE UPDATE ON public.construction_partnerships
 FOR EACH ROW
@@ -1678,10 +1543,6 @@ CREATE TRIGGER set_partnership_allocations_updated_at
 BEFORE UPDATE ON public.partnership_allocations
 FOR EACH ROW
 EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
 
 CREATE INDEX idx_construction_partnerships_project_id
   ON public.construction_partnerships(project_id);
@@ -1709,7 +1570,6 @@ CREATE INDEX idx_partnership_allocations_type
 
 -- ============================================================
 -- 13. LISTINGS
--- Property Listing / Advertisement Layer
 -- ============================================================
 
 CREATE TYPE public.listing_kind AS ENUM (
@@ -1800,11 +1660,6 @@ CREATE TABLE public.listings (
     )
 );
 
--- ============================================================
--- Listing representation / authority
--- Used when a member advertises property on behalf of an owner.
--- ============================================================
-
 CREATE TABLE public.listing_representations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1845,11 +1700,6 @@ CREATE TABLE public.listing_representations (
     NOT NULL DEFAULT now()
 );
 
--- ============================================================
--- Listing prices
--- Current price information for a listing.
--- ============================================================
-
 CREATE TABLE public.listing_prices (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -1889,472 +1739,3 @@ CREATE TABLE public.listing_prices (
   CONSTRAINT listing_prices_monthly_rent_check
     CHECK (monthly_rent IS NULL OR monthly_rent >= 0)
 );
-
--- ============================================================
--- Listing media
--- storage_path is the source of truth.
--- public_url is optional/cacheable and is NOT authoritative.
--- ============================================================
-
-CREATE TABLE public.listing_media (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  listing_id uuid NOT NULL
-    REFERENCES public.listings(id)
-    ON DELETE CASCADE,
-
-  storage_path text NOT NULL,
-
-  public_url text,
-
-  media_type public.listing_media_type
-    NOT NULL,
-
-  sort_order integer
-    NOT NULL DEFAULT 0,
-
-  is_primary boolean
-    NOT NULL DEFAULT false,
-
-  created_at timestamptz
-    NOT NULL DEFAULT now(),
-
-  CONSTRAINT listing_media_storage_path_not_blank
-    CHECK (length(trim(storage_path)) > 0),
-
-  CONSTRAINT listing_media_sort_order_check
-    CHECK (sort_order >= 0)
-);
-
--- ============================================================
--- Listing status history
--- Keeps lifecycle history separate from generic audit logs.
--- ============================================================
-
-CREATE TABLE public.listing_status_history (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  listing_id uuid NOT NULL
-    REFERENCES public.listings(id)
-    ON DELETE CASCADE,
-
-  from_status public.listing_status,
-
-  to_status public.listing_status
-    NOT NULL,
-
-  changed_by uuid
-    REFERENCES public.profiles(id)
-    ON DELETE SET NULL,
-
-  reason text,
-
-  created_at timestamptz
-    NOT NULL DEFAULT now()
-);
-
--- ============================================================
--- Short-term rental / accommodation details
--- This is a separate business flow from ordinary RENT.
--- ============================================================
-
-CREATE TABLE public.short_term_details (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  listing_id uuid NOT NULL UNIQUE
-    REFERENCES public.listings(id)
-    ON DELETE CASCADE,
-
-  property_type public.short_term_property_type
-    NOT NULL,
-
-  capacity integer,
-
-  beds integer,
-
-  rooms integer,
-
-  bathrooms integer,
-
-  price_per_night numeric(18,2),
-
-  price_per_week numeric(18,2),
-
-  price_per_month numeric(18,2),
-
-  min_nights integer,
-
-  max_nights integer,
-
-  check_in_time time,
-
-  check_out_time time,
-
-  amenities jsonb
-    NOT NULL DEFAULT '{}'::jsonb,
-
-  house_rules jsonb
-    NOT NULL DEFAULT '{}'::jsonb,
-
-  created_at timestamptz
-    NOT NULL DEFAULT now(),
-
-  updated_at timestamptz
-    NOT NULL DEFAULT now(),
-
-  CONSTRAINT short_term_capacity_check
-    CHECK (capacity IS NULL OR capacity >= 0),
-
-  CONSTRAINT short_term_beds_check
-    CHECK (beds IS NULL OR beds >= 0),
-
-  CONSTRAINT short_term_rooms_check
-    CHECK (rooms IS NULL OR rooms >= 0),
-
-  CONSTRAINT short_term_bathrooms_check
-    CHECK (bathrooms IS NULL OR bathrooms >= 0),
-
-  CONSTRAINT short_term_nightly_price_check
-    CHECK (price_per_night IS NULL OR price_per_night >= 0),
-
-  CONSTRAINT short_term_weekly_price_check
-    CHECK (price_per_week IS NULL OR price_per_week >= 0),
-
-  CONSTRAINT short_term_monthly_price_check
-    CHECK (price_per_month IS NULL OR price_per_month >= 0),
-
-  CONSTRAINT short_term_min_nights_check
-    CHECK (min_nights IS NULL OR min_nights > 0),
-
-  CONSTRAINT short_term_max_nights_check
-    CHECK (max_nights IS NULL OR max_nights > 0),
-
-  CONSTRAINT short_term_nights_range_check
-    CHECK (
-      min_nights IS NULL
-      OR max_nights IS NULL
-      OR max_nights >= min_nights
-    )
-);
-
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
-CREATE TRIGGER set_listings_updated_at
-BEFORE UPDATE ON public.listings
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
-CREATE TRIGGER set_listing_representations_updated_at
-BEFORE UPDATE ON public.listing_representations
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
-CREATE TRIGGER set_listing_prices_updated_at
-BEFORE UPDATE ON public.listing_prices
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
-CREATE TRIGGER set_listing_media_updated_at
-BEFORE UPDATE ON public.listing_media
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
-CREATE TRIGGER set_short_term_details_updated_at
-BEFORE UPDATE ON public.short_term_details
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
-
-CREATE INDEX idx_listings_property_id
-  ON public.listings(property_id);
-
-CREATE INDEX idx_listings_created_by
-  ON public.listings(created_by);
-
-CREATE INDEX idx_listings_advertiser_user_id
-  ON public.listings(advertiser_user_id);
-
-CREATE INDEX idx_listings_project_id
-  ON public.listings(project_id);
-
-CREATE INDEX idx_listings_project_unit_id
-  ON public.listings(project_unit_id);
-
-CREATE INDEX idx_listings_kind
-  ON public.listings(listing_kind);
-
-CREATE INDEX idx_listings_transaction_type
-  ON public.listings(transaction_type);
-
-CREATE INDEX idx_listings_status
-  ON public.listings(status);
-
-CREATE INDEX idx_listings_result
-  ON public.listings(result);
-
-CREATE INDEX idx_listings_visibility
-  ON public.listings(visibility);
-
-CREATE INDEX idx_listing_representations_listing_id
-  ON public.listing_representations(listing_id);
-
-CREATE INDEX idx_listing_representations_owner_id
-  ON public.listing_representations(property_owner_id);
-
-CREATE INDEX idx_listing_representations_representative_id
-  ON public.listing_representations(representative_user_id);
-
-CREATE INDEX idx_listing_representations_status
-  ON public.listing_representations(status);
-
-CREATE INDEX idx_listing_media_listing_id
-  ON public.listing_media(listing_id);
-
-CREATE INDEX idx_listing_media_sort_order
-  ON public.listing_media(listing_id, sort_order);
-
-CREATE INDEX idx_listing_status_history_listing_id
-  ON public.listing_status_history(listing_id);
-
-CREATE INDEX idx_listing_status_history_created_at
-  ON public.listing_status_history(created_at);
-
-CREATE INDEX idx_short_term_details_listing_id
-  ON public.short_term_details(listing_id);
-
--- ============================================================
--- 14. USER OPERATIONS
--- Favorites / Contact Requests / Listing Reports
--- ============================================================
-
--- ============================================================
--- Favorites
--- ============================================================
-
-CREATE TABLE public.favorites (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  user_id uuid NOT NULL
-    REFERENCES public.profiles(id)
-    ON DELETE CASCADE,
-
-  listing_id uuid NOT NULL
-    REFERENCES public.listings(id)
-    ON DELETE CASCADE,
-
-  created_at timestamptz NOT NULL DEFAULT now(),
-
-  CONSTRAINT favorites_user_listing_unique
-    UNIQUE (user_id, listing_id)
-);
-
--- ============================================================
--- Contact requests
--- ============================================================
-
-CREATE TABLE public.contact_requests (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  listing_id uuid NOT NULL
-    REFERENCES public.listings(id)
-    ON DELETE CASCADE,
-
-  requester_user_id uuid NOT NULL
-    REFERENCES public.profiles(id)
-    ON DELETE CASCADE,
-
-  advertiser_user_id uuid
-    REFERENCES public.profiles(id)
-    ON DELETE SET NULL,
-
-  method public.contact_method
-    NOT NULL,
-
-  message text,
-
-  status public.contact_request_status
-    NOT NULL DEFAULT 'pending',
-
-  responded_at timestamptz,
-
-  created_at timestamptz NOT NULL DEFAULT now(),
-
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
--- ============================================================
--- Listing reports
--- ============================================================
-
-CREATE TABLE public.listing_reports (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  listing_id uuid NOT NULL
-    REFERENCES public.listings(id)
-    ON DELETE CASCADE,
-
-  reporter_user_id uuid NOT NULL
-    REFERENCES public.profiles(id)
-    ON DELETE CASCADE,
-
-  reason public.listing_report_reason
-    NOT NULL,
-
-  description text,
-
-  status public.listing_report_status
-    NOT NULL DEFAULT 'pending',
-
-  reviewed_by uuid
-    REFERENCES public.profiles(id)
-    ON DELETE SET NULL,
-
-  reviewed_at timestamptz,
-
-  created_at timestamptz NOT NULL DEFAULT now(),
-
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
--- ============================================================
--- Updated-at triggers
--- ============================================================
-
-CREATE TRIGGER set_contact_requests_updated_at
-BEFORE UPDATE ON public.contact_requests
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
-CREATE TRIGGER set_listing_reports_updated_at
-BEFORE UPDATE ON public.listing_reports
-FOR EACH ROW
-EXECUTE FUNCTION public.set_updated_at();
-
--- ============================================================
--- Indexes
--- ============================================================
-
-CREATE INDEX idx_favorites_user_id
-  ON public.favorites(user_id);
-
-CREATE INDEX idx_favorites_listing_id
-  ON public.favorites(listing_id);
-
-CREATE INDEX idx_favorites_created_at
-  ON public.favorites(created_at);
-
-CREATE INDEX idx_contact_requests_listing_id
-  ON public.contact_requests(listing_id);
-
-CREATE INDEX idx_contact_requests_requester_user_id
-  ON public.contact_requests(requester_user_id);
-
-CREATE INDEX idx_contact_requests_advertiser_user_id
-  ON public.contact_requests(advertiser_user_id);
-
-CREATE INDEX idx_contact_requests_status
-  ON public.contact_requests(status);
-
-CREATE INDEX idx_contact_requests_created_at
-  ON public.contact_requests(created_at);
-
-CREATE INDEX idx_listing_reports_listing_id
-  ON public.listing_reports(listing_id);
-
-CREATE INDEX idx_listing_reports_reporter_user_id
-  ON public.listing_reports(reporter_user_id);
-
-CREATE INDEX idx_listing_reports_status
-  ON public.listing_reports(status);
-
-CREATE INDEX idx_listing_reports_created_at
-  ON public.listing_reports(created_at);
-
--- ============================================================
--- 15. PLATFORM LEGAL DOCUMENTS & ACCEPTANCES
--- ============================================================
-
-CREATE TABLE public.platform_legal_documents (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  document_type public.platform_legal_document_type
-    NOT NULL,
-
-  version text NOT NULL,
-
-  content text NOT NULL,
-
-  is_active boolean
-    NOT NULL DEFAULT false,
-
-  requires_reacceptance boolean
-    NOT NULL DEFAULT true,
-
-  published_at timestamptz,
-
-  created_at timestamptz
-    NOT NULL DEFAULT now(),
-
-  CONSTRAINT platform_legal_documents_version_not_blank
-    CHECK (length(trim(version)) > 0),
-
-  CONSTRAINT platform_legal_documents_content_not_blank
-    CHECK (length(trim(content)) > 0),
-
-  CONSTRAINT platform_legal_documents_type_version_unique
-    UNIQUE (document_type, version)
-);
-
--- ============================================================
--- User acceptance history
--- Each acceptance points to the exact legal-document version.
--- Previous acceptances are preserved.
--- ============================================================
-
-CREATE TABLE public.terms_acceptances (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  user_id uuid NOT NULL
-    REFERENCES public.profiles(id)
-    ON DELETE CASCADE,
-
-  platform_legal_document_id uuid NOT NULL
-    REFERENCES public.platform_legal_documents(id)
-    ON DELETE RESTRICT,
-
-  acceptance_context public.acceptance_context
-    NOT NULL,
-
-  accepted_at timestamptz
-    NOT NULL DEFAULT now()
-);
-
--- ============================================================
--- Indexes
--- ============================================================
-
-CREATE INDEX idx_platform_legal_documents_type
-  ON public.platform_legal_documents(document_type);
-
-CREATE INDEX idx_platform_legal_documents_active
-  ON public.platform_legal_documents(is_active);
-
-CREATE INDEX idx_platform_legal_documents_published_at
-  ON public.platform_legal_documents(published_at);
-
-CREATE INDEX idx_terms_acceptances_user_id
-  ON public.terms_acceptances(user_id);
-
-CREATE INDEX idx_terms_acceptances_document_id
-  ON public.terms_acceptances(platform_legal_document_id);
-
-CREATE INDEX idx_terms_acceptances_accepted_at
-  ON public.terms_acceptances(accepted_at);
-
-CREATE INDEX idx_terms_acceptances_context
-  ON public.terms_acceptances(acceptance_context);
