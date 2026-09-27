@@ -7,7 +7,8 @@ export const ROUTES = {
   AGENT: '/agent',
   ADMIN: '/admin',
 } as const;
+
 export const AUTH_ROUTES: readonly string[] = [
-  ROUTES.login,
-  ROUTES.signup,
+  ROUTES.LOGIN,
+  ROUTES.SIGNUP,
 ];
