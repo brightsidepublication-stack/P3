@@ -14,6 +14,7 @@ export interface UserProfile {
   role: UserRoleEnum;
   email: string | null;
   phone: string | null;
+  phoneVerifiedAt: string | null;
   displayName: string | null;
   avatarUrl: string | null;
   createdAt: string;
@@ -21,6 +22,14 @@ export interface UserProfile {
 }
 
 export interface CurrentUser {
-  auth: User;
+  auth: AuthUser;
   profile: UserProfile | null;
 }
+
+/**
+ * Raw Supabase Auth user.
+ *
+ * Use this type only where direct Supabase Auth data is required.
+ * Application-level current-user state should use CurrentUser above.
+ */
+export type SupabaseAuthUser = User;
