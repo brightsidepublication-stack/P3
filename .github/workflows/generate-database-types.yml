@@ -2,7 +2,8 @@ name: Generate Database Types
 
 on:
   workflow_dispatch:
-
+permissions:
+  contents: write
 jobs:
   generate:
     name: Generate Supabase database.types.ts
