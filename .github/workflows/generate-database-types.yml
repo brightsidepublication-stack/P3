@@ -1,0 +1,49 @@
+name: Generate Database Types
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    name: Generate Supabase database.types.ts
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Generate database types
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "=== Generating database.types.ts ==="
+          supabase gen types typescript \
+            --project-id "${{ secrets.SUPABASE_PROJECT_ID }}" \
+            --schema public \
+            > src/types/database.types.ts
+
+      - name: Show generated file info
+        run: |
+          echo "=== Generated file ==="
+          wc -l src/types/database.types.ts
+          head -n 20 src/types/database.types.ts
+
+      - name: Commit generated types
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add src/types/database.types.ts
+
+          if git diff --cached --quiet; then
+            echo "No changes to database.types.ts"
+            exit 0
+          fi
+
+          git commit -m "chore: regenerate Supabase database types"
+          git push
