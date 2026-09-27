@@ -2629,3 +2629,5 @@ export const Constants = {
     },
   },
 } as const
+
+export type UserRoleEnum = Database["public"]["Enums"]["user_role"];
