@@ -2,8 +2,10 @@ name: Generate Database Types
 
 on:
   workflow_dispatch:
+
 permissions:
   contents: write
+
 jobs:
   generate:
     name: Generate Supabase database.types.ts
@@ -27,6 +29,12 @@ jobs:
             --project-id "${{ secrets.SUPABASE_PROJECT_ID }}" \
             --schema public \
             > src/types/database.types.ts
+
+          cat >> src/types/database.types.ts <<'EOF'
+
+          export type UserRoleEnum =
+            Database["public"]["Enums"]["user_role"];
+          EOF
 
       - name: Show generated file info
         run: |
