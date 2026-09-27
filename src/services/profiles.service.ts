@@ -7,6 +7,7 @@ function mapProfile(row: {
   role: UserProfile['role'];
   email: string | null;
   phone: string | null;
+  phone_verified_at: string | null;
   display_name: string | null;
   avatar_url: string | null;
   created_at: string;
@@ -17,12 +18,16 @@ function mapProfile(row: {
     role: row.role,
     email: row.email,
     phone: row.phone,
+    phoneVerifiedAt: row.phone_verified_at,
     displayName: row.display_name,
     avatarUrl: row.avatar_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
+
+const PROFILE_SELECT =
+  'id, role, email, phone, phone_verified_at, display_name, avatar_url, created_at, updated_at';
 
 export async function getProfileById(
   userId: string,
@@ -32,9 +37,7 @@ export async function getProfileById(
 
     const { data, error } = await sb
       .from('profiles')
-      .select(
-        'id, role, email, phone, display_name, avatar_url, created_at, updated_at',
-      )
+      .select(PROFILE_SELECT)
       .eq('id', userId)
       .maybeSingle();
 
@@ -56,7 +59,6 @@ export async function updateOwnProfile(
   patch: {
     display_name?: string | null;
     avatar_url?: string | null;
-    phone?: string | null;
   },
 ): Promise<UserProfile> {
   try {
@@ -66,9 +68,7 @@ export async function updateOwnProfile(
       .from('profiles')
       .update(patch)
       .eq('id', userId)
-      .select(
-        'id, role, email, phone, display_name, avatar_url, created_at, updated_at',
-      )
+      .select(PROFILE_SELECT)
       .single();
 
     if (error) {
