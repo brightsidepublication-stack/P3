@@ -1,7 +1,6 @@
 import { X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { useAuth } from '../../features/auth/AuthContext';
 import { ROUTES } from '../../constants/routes';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
@@ -16,7 +15,6 @@ export function MobileDrawer({
 }: MobileDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const location = useLocation();
-  const { user } = useAuth();
 
   useFocusTrap(drawerRef, open);
 
@@ -84,10 +82,10 @@ export function MobileDrawer({
           className="flex flex-col p-3"
         >
           <Link
-            to={ROUTES.home}
+            to={ROUTES.HOME}
             onClick={onClose}
             className={`rounded-xl px-4 py-3 text-sm font-medium ${
-              isActive(ROUTES.home)
+              isActive(ROUTES.HOME)
                 ? 'bg-slate-100 text-slate-900'
                 : 'text-slate-700 hover:bg-slate-50'
             }`}
@@ -96,52 +94,24 @@ export function MobileDrawer({
           </Link>
 
           <Link
-            to={ROUTES.search}
+            to={ROUTES.PROFILE}
             onClick={onClose}
             className={`rounded-xl px-4 py-3 text-sm font-medium ${
-              isActive(ROUTES.search)
+              isActive(ROUTES.PROFILE)
                 ? 'bg-slate-100 text-slate-900'
                 : 'text-slate-700 hover:bg-slate-50'
             }`}
           >
-            جستجو
+            پروفایل
           </Link>
 
-          {user ? (
-            <>
-              <Link
-                to={ROUTES.favorites}
-                onClick={onClose}
-                className={`rounded-xl px-4 py-3 text-sm font-medium ${
-                  isActive(ROUTES.favorites)
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                علاقه‌مندی‌ها
-              </Link>
-
-              <Link
-                to={ROUTES.profile}
-                onClick={onClose}
-                className={`rounded-xl px-4 py-3 text-sm font-medium ${
-                  isActive(ROUTES.profile)
-                    ? 'bg-slate-100 text-slate-900'
-                    : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                پروفایل
-              </Link>
-            </>
-          ) : (
-            <Link
-              to={ROUTES.login}
-              onClick={onClose}
-              className="rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              ورود
-            </Link>
-          )}
+          <Link
+            to={ROUTES.LOGIN}
+            onClick={onClose}
+            className="rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            ورود
+          </Link>
         </nav>
       </aside>
     </div>
