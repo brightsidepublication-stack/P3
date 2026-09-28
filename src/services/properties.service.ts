@@ -47,7 +47,7 @@ async function requireUserId(): Promise<string> {
 
   if (!data.user) {
     throw new AppError(
-      'UNAUTHORIZED',
+      'AUTH',
       'برای این عملیات باید وارد حساب شوید.'
     );
   }
