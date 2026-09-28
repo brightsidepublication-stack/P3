@@ -5,6 +5,7 @@ type ErrorStateProps = {
   title?: string;
   message: string;
   action?: ReactNode;
+  onRetry?: () => void;
   className?: string;
 };
 
@@ -12,6 +13,7 @@ export function ErrorState({
   title = 'خطایی رخ داد',
   message,
   action,
+  onRetry,
   className = '',
 }: ErrorStateProps) {
   return (
@@ -31,6 +33,18 @@ export function ErrorState({
       <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-red-700">
         {message}
       </p>
+
+      {onRetry ? (
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      ) : null}
 
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
