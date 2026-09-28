@@ -34,7 +34,7 @@ export function PropertyCard({
           {property.title}
         </Link>
 
-        <Badge variant="neutral">
+        <Badge variant="default">
           {formatDate(property.created_at)}
         </Badge>
       </div>
@@ -49,14 +49,14 @@ export function PropertyCard({
       <div className="flex flex-wrap gap-2 pt-1">
         <Link
           to={ROUTES.properties.details(property.id)}
-          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
         >
           مشاهده
         </Link>
 
         <Link
           to={ROUTES.properties.edit(property.id)}
-          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
+          className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-800"
         >
           ویرایش
         </Link>
