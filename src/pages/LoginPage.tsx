@@ -1,13 +1,9 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
-import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getAuthErrorMessage } from '@/utils/auth-errors';
-import { getSafeRedirect } from '@/utils/safe-redirect';
 
 export function LoginPage() {
-  const [searchParams] = useSearchParams();
   const { signInWithTelegram } = useAuth();
 
   const [error, setError] = useState<string | null>(null);
@@ -18,12 +14,7 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const redirect = getSafeRedirect(
-        searchParams.get('redirect'),
-        ROUTES.PROFILE,
-      );
-
-      await signInWithTelegram(redirect);
+      await signInWithTelegram();
     } catch (authError) {
       setError(getAuthErrorMessage(authError));
       setIsSubmitting(false);
@@ -62,10 +53,7 @@ export function LoginPage() {
             'در حال انتقال به تلگرام...'
           ) : (
             <>
-              <span
-                aria-hidden="true"
-                className="text-lg"
-              >
+              <span aria-hidden="true" className="text-lg">
                 ➤
               </span>
               ورود با تلگرام
