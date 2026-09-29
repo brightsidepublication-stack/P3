@@ -24,10 +24,7 @@ import type { AuthUser, UserProfile } from '@/types/auth.types';
  *  - Raw Supabase errors are mapped to safe user-facing messages.
  */
 
-// ---------------------------------------------------------------------------
 // Session / identity
-// ---------------------------------------------------------------------------
-
 export async function getSession(): Promise<Session | null> {
   try {
     const sb = getSupabaseClient();
@@ -105,17 +102,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   };
 }
 
-// ---------------------------------------------------------------------------
 // Mutations
-// ---------------------------------------------------------------------------
-
-/**
- * Legacy email/password sign-up.
- *
- * Browser/email authentication is not part of the current primary
- * authentication flow. Kept temporarily for compatibility with existing
- * code until the Telegram-first UI is replaced.
- */
 export async function signUp(
   email: string,
   password: string,
@@ -136,12 +123,6 @@ export async function signUp(
   }
 }
 
-/**
- * Legacy email/password sign-in.
- *
- * Kept temporarily for compatibility. The primary authentication method
- * is now Telegram OIDC.
- */
 export async function signIn(
   email: string,
   password: string,
@@ -176,7 +157,7 @@ export async function signInWithTelegram(
     const finalRedirectTo =
       redirectTo ??
       (typeof window !== 'undefined'
-        ? `${window.location.origin}/P3/profile`
+        ? `${window.location.origin}/P3/`
         : undefined);
 
     const { error } = await sb.auth.signInWithOAuth({
@@ -197,6 +178,7 @@ export async function signInWithTelegram(
 export async function signOut(): Promise<void> {
   try {
     const sb = getSupabaseClient();
+
     const { error } = await sb.auth.signOut();
 
     if (error) {
@@ -207,13 +189,9 @@ export async function signOut(): Promise<void> {
   }
 }
 
-/**
- * Legacy password-reset flow.
- *
- * Kept temporarily for compatibility while browser/email authentication
- * is being phased out.
- */
-export async function resetPassword(email: string): Promise<void> {
+export async function resetPassword(
+  email: string,
+): Promise<void> {
   try {
     const sb = getSupabaseClient();
 
@@ -222,9 +200,12 @@ export async function resetPassword(email: string): Promise<void> {
         ? `${window.location.origin}/P3/login`
         : undefined;
 
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo,
-    });
+    const { error } = await sb.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo,
+      },
+    );
 
     if (error) {
       throw error;
@@ -252,10 +233,7 @@ export async function updatePassword(
   }
 }
 
-// ---------------------------------------------------------------------------
 // Auth state subscription
-// ---------------------------------------------------------------------------
-
 export type AuthSubscription = Pick<
   Subscription,
   'unsubscribe'
