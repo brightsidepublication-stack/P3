@@ -1,50 +1,31 @@
-import { FormEvent, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getAuthErrorMessage } from '@/utils/auth-errors';
 import { getSafeRedirect } from '@/utils/safe-redirect';
-import { loginSchema } from '@/utils/validators';
 
 export function LoginPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signIn } = useAuth();
+  const { signInWithTelegram } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleTelegramLogin() {
     setError(null);
-
-    const result = loginSchema.safeParse({
-      email,
-      password,
-    });
-
-    if (!result.success) {
-      setError(result.error.issues[0]?.message ?? 'اطلاعات واردشده معتبر نیست.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      await signIn(result.data.email, result.data.password);
-
       const redirect = getSafeRedirect(
         searchParams.get('redirect'),
         ROUTES.PROFILE,
       );
 
-      navigate(redirect, { replace: true });
+      await signInWithTelegram(redirect);
     } catch (authError) {
       setError(getAuthErrorMessage(authError));
-    } finally {
       setIsSubmitting(false);
     }
   }
@@ -52,83 +33,48 @@ export function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-6">
+        <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-slate-900">
-            ورود
+            ورود به مینی‌اپ املاک
           </h1>
 
-          <p className="mt-2 text-sm text-slate-600">
-            برای ادامه وارد حساب کاربری خود شوید.
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            برای ورود و ادامه، از حساب تلگرام خود استفاده کنید.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
-              ایمیل
-            </label>
-
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder="example@email.com"
-              disabled={isSubmitting}
-            />
+        {error && (
+          <div
+            role="alert"
+            className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-700"
+          >
+            {error}
           </div>
+        )}
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
-              رمز عبور
-            </label>
-
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              placeholder="رمز عبور"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {error && (
-            <div
-              role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm leading-6 text-red-700"
-            >
-              {error}
-            </div>
+        <button
+          type="button"
+          onClick={handleTelegramLogin}
+          disabled={isSubmitting}
+          className="flex w-full items-center justify-center gap-3 rounded-lg bg-sky-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSubmitting ? (
+            'در حال انتقال به تلگرام...'
+          ) : (
+            <>
+              <span
+                aria-hidden="true"
+                className="text-lg"
+              >
+                ➤
+              </span>
+              ورود با تلگرام
+            </>
           )}
+        </button>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
-          >
-            {isSubmitting ? 'در حال ورود...' : 'ورود'}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-600">
-          حساب کاربری ندارید؟{' '}
-          <Link
-            to={ROUTES.SIGNUP}
-            className="font-medium text-blue-600 hover:text-blue-700"
-          >
-            ثبت‌نام کنید
-          </Link>
+        <p className="mt-6 text-center text-xs leading-5 text-slate-500">
+          ورود با ایمیل و رمز عبور در حال حاضر غیرفعال است.
         </p>
       </section>
     </main>
