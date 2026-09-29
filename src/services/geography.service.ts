@@ -8,6 +8,9 @@ export type Province =
 export type City =
   Database['public']['Tables']['cities']['Row'];
 
+export type District =
+  Database['public']['Tables']['districts']['Row'];
+
 export async function listActiveProvinces(): Promise<Province[]> {
   try {
     const sb = getSupabaseClient();
@@ -42,6 +45,27 @@ export async function listActiveCities(
     if (error) throw error;
 
     return (data ?? []) as City[];
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+export async function listActiveDistricts(
+  cityId: string
+): Promise<District[]> {
+  try {
+    const sb = getSupabaseClient();
+
+    const { data, error } = await sb
+      .from('districts')
+      .select('*')
+      .eq('city_id', cityId)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []) as District[];
   } catch (error) {
     throw toAppError(error);
   }
