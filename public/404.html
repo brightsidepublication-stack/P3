@@ -2,29 +2,36 @@
 <html lang="fa" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
 
     <script>
-      const path = window.location.pathname;
-      const search = window.location.search;
-      const hash = window.location.hash;
+      (function () {
+        const base = '/P3/';
+        const path = window.location.pathname;
+        const search = window.location.search;
+        const hash = window.location.hash;
 
-      const base = '/P3/';
+        if (!path.startsWith(base)) {
+          window.location.replace(base);
+          return;
+        }
 
-      if (path.startsWith(base) && path !== base) {
         const route = path.slice(base.length);
 
-        const redirectUrl =
-          base +
-          '?redirect=/' +
-          encodeURIComponent(route) +
-          (search ? '&' + search.slice(1) : '') +
-          hash;
+        if (!route) {
+          window.location.replace(base);
+          return;
+        }
 
-        window.location.replace(redirectUrl);
-      } else {
-        window.location.replace(base);
-      }
+        const target = '/' + route + search + hash;
+
+        window.location.replace(
+          base + '?redirect=' + encodeURIComponent(target)
+        );
+      })();
     </script>
 
     <title>مینی‌اپ املاک</title>
