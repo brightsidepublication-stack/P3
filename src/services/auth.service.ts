@@ -167,19 +167,22 @@ export async function signIn(
  *
  * Supabase handles the OIDC authorization flow, PKCE and callback.
  */
-export async function signInWithTelegram(): Promise<void> {
+export async function signInWithTelegram(
+  redirectTo?: string,
+): Promise<void> {
   try {
     const sb = getSupabaseClient();
 
-    const redirectTo =
-      typeof window !== 'undefined'
-        ? window.location.href
-        : undefined;
+    const finalRedirectTo =
+      redirectTo ??
+      (typeof window !== 'undefined'
+        ? `${window.location.origin}/P3/profile`
+        : undefined);
 
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'custom:telegram',
       options: {
-        redirectTo,
+        redirectTo: finalRedirectTo,
       },
     });
 
