@@ -12,6 +12,7 @@ import type { Session, User } from '@supabase/supabase-js';
 
 import { getProfileById } from '@/services/profiles.service';
 import {
+  getSession,
   onAuthStateChange,
   resetPassword as resetPasswordService,
   signIn as signInService,
@@ -139,30 +140,48 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     mountedRef.current = true;
 
-    const subscription = onAuthStateChange(
-      async (event, nextSession) => {
-        if (!mountedRef.current) {
-          return;
+    let subscription:
+      | ReturnType<typeof onAuthStateChange>
+      | null = null;
+
+    async function initializeAuth() {
+      try {
+        const initialSession = await getSession();
+
+        if (mountedRef.current) {
+          await applySession(initialSession);
         }
+      } catch {
+        if (mountedRef.current) {
+          await applySession(null);
+        }
+      } finally {
+        if (mountedRef.current) {
+          setIsLoading(false);
+        }
+      }
 
-        if (event === 'INITIAL_SESSION') {
-          await applySession(nextSession);
+      if (!mountedRef.current) {
+        return;
+      }
 
-          if (mountedRef.current) {
-            setIsLoading(false);
+      subscription = onAuthStateChange(
+        async (_event, nextSession) => {
+          if (!mountedRef.current) {
+            return;
           }
 
-          return;
-        }
+          await applySession(nextSession);
+        },
+      );
+    }
 
-        await applySession(nextSession);
-      },
-    );
+    void initializeAuth();
 
     return () => {
       mountedRef.current = false;
       profileRequestIdRef.current += 1;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, [applySession]);
 
