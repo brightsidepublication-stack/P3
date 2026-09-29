@@ -15,6 +15,7 @@ import {
   onAuthStateChange,
   resetPassword as resetPasswordService,
   signIn as signInService,
+  signInWithTelegram as signInWithTelegramService,
   signOut as signOutService,
   signUp as signUpService,
   updatePassword as updatePasswordService,
@@ -32,6 +33,7 @@ interface AuthContextValue {
   isAgent: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithTelegram: (redirectTo?: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -171,6 +173,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     [],
   );
 
+  const signInWithTelegram = useCallback(
+    async (redirectTo?: string) => {
+      await signInWithTelegramService(redirectTo);
+    },
+    [],
+  );
+
   const signUp = useCallback(
     async (email: string, password: string) => {
       await signUpService(email, password);
@@ -202,6 +211,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isAgent: profile?.role === 'agent',
       isAdmin: profile?.role === 'admin',
       signIn,
+      signInWithTelegram,
       signUp,
       signOut,
       resetPassword,
@@ -216,6 +226,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       isProfileLoading,
       profileError,
       signIn,
+      signInWithTelegram,
       signUp,
       signOut,
       resetPassword,
