@@ -12,15 +12,15 @@ import { logger } from '@/lib/logger';
 import type { AuthUser, UserProfile } from '@/types/auth.types';
 
 /**
- * Auth service — Phase 3.
+ * Auth service.
  *
  * Composes Supabase Auth identity with the matching `profiles` row.
  *
- * SECURITY RULES (enforced here, not in UI):
+ * SECURITY RULES:
  *  - `role` is NEVER accepted from callers.
  *  - `role` is NEVER written from this file.
  *  - `role` is NEVER read from user_metadata or any frontend source.
- *  - Session tokens are managed by Supabase (no manual localStorage writes).
+ *  - Session tokens are managed by Supabase.
  *  - Raw Supabase errors are mapped to safe user-facing messages.
  */
 
@@ -109,6 +109,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 // Mutations
 // ---------------------------------------------------------------------------
 
+/**
+ * Legacy email/password sign-up.
+ *
+ * Browser/email authentication is not part of the current primary
+ * authentication flow. Kept temporarily for compatibility with existing
+ * code until the Telegram-first UI is replaced.
+ */
 export async function signUp(
   email: string,
   password: string,
@@ -129,6 +136,12 @@ export async function signUp(
   }
 }
 
+/**
+ * Legacy email/password sign-in.
+ *
+ * Kept temporarily for compatibility. The primary authentication method
+ * is now Telegram OIDC.
+ */
 export async function signIn(
   email: string,
   password: string,
@@ -139,6 +152,35 @@ export async function signIn(
     const { error } = await sb.auth.signInWithPassword({
       email,
       password,
+    });
+
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+/**
+ * Start Telegram OIDC authentication through Supabase.
+ *
+ * Supabase handles the OIDC authorization flow, PKCE and callback.
+ */
+export async function signInWithTelegram(): Promise<void> {
+  try {
+    const sb = getSupabaseClient();
+
+    const redirectTo =
+      typeof window !== 'undefined'
+        ? window.location.href
+        : undefined;
+
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'custom:telegram',
+      options: {
+        redirectTo,
+      },
     });
 
     if (error) {
@@ -162,13 +204,19 @@ export async function signOut(): Promise<void> {
   }
 }
 
+/**
+ * Legacy password-reset flow.
+ *
+ * Kept temporarily for compatibility while browser/email authentication
+ * is being phased out.
+ */
 export async function resetPassword(email: string): Promise<void> {
   try {
     const sb = getSupabaseClient();
 
     const redirectTo =
       typeof window !== 'undefined'
-        ? `${window.location.origin}/login`
+        ? `${window.location.origin}/P3/login`
         : undefined;
 
     const { error } = await sb.auth.resetPasswordForEmail(email, {
