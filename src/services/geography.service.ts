@@ -11,6 +11,9 @@ export type City =
 export type District =
   Database['public']['Tables']['districts']['Row'];
 
+export type Neighborhood =
+  Database['public']['Tables']['neighborhoods']['Row'];
+
 export async function listActiveProvinces(): Promise<Province[]> {
   try {
     const sb = getSupabaseClient();
@@ -66,6 +69,27 @@ export async function listActiveDistricts(
     if (error) throw error;
 
     return (data ?? []) as District[];
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+export async function listActiveNeighborhoods(
+  districtId: string
+): Promise<Neighborhood[]> {
+  try {
+    const sb = getSupabaseClient();
+
+    const { data, error } = await sb
+      .from('neighborhoods')
+      .select('*')
+      .eq('district_id', districtId)
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []) as Neighborhood[];
   } catch (error) {
     throw toAppError(error);
   }
