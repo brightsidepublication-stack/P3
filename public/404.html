@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script>
+      const path = window.location.pathname;
+      const search = window.location.search;
+      const hash = window.location.hash;
+
+      const base = '/P3/';
+
+      if (path.startsWith(base) && path !== base) {
+        const route = path.slice(base.length);
+
+        const redirectUrl =
+          base +
+          '?redirect=/' +
+          encodeURIComponent(route) +
+          (search ? '&' + search.slice(1) : '') +
+          hash;
+
+        window.location.replace(redirectUrl);
+      } else {
+        window.location.replace(base);
+      }
+    </script>
+
+    <title>مینی‌اپ املاک</title>
+  </head>
+
+  <body>
+    <p>در حال انتقال...</p>
+  </body>
+</html>
