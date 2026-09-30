@@ -41,6 +41,17 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify Pages files
+        run: |
+          echo "=== dist contents ==="
+          find dist -maxdepth 2 -type f | sort
+
+          echo "=== checking 404.html ==="
+          test -f dist/404.html
+
+          echo "=== checking index.html ==="
+          test -f dist/index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
