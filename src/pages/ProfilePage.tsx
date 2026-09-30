@@ -95,7 +95,13 @@ export function ProfilePage() {
           <div className="rounded-lg bg-slate-50 p-4">
             <p className="text-xs text-slate-500">نام نمایشی</p>
             <p className="mt-1 text-sm font-medium text-slate-900">
-              {profile?.displayName ?? '—'}
+              {profile?.displayName ??
+                (user?.user_metadata?.full_name as string | undefined) ??
+                (user?.user_metadata?.name as string | undefined) ??
+                (user?.user_metadata?.preferred_username as
+                  | string
+                  | undefined) ??
+                '—'}
             </p>
           </div>
 
