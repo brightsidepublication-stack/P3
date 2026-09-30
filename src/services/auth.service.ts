@@ -52,7 +52,10 @@ function toAuthUser(user: {
     email: user.email ?? null,
     phone: user.phone ?? null,
     displayName:
-      (user.user_metadata?.full_name as string | undefined) ?? null,
+      (user.user_metadata?.full_name as string | undefined) ??
+      (user.user_metadata?.name as string | undefined) ??
+      (user.user_metadata?.preferred_username as string | undefined) ??
+      null,
     createdAt: user.created_at,
   };
 }
