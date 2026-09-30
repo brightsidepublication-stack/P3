@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter } from 'react-router-dom';
+import { Navigate, createHashRouter } from 'react-router-dom';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { RoleGuard } from '@/components/auth/RoleGuard';
@@ -6,13 +6,13 @@ import { ROUTES } from '@/constants/routes';
 import { LoginPage } from '@/pages/LoginPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { SignupPage } from '@/pages/SignupPage';
+import { MainLayout } from '@/layouts/MainLayout';
 import { MyPropertiesPage } from '@/pages/MyPropertiesPage';
 import { PropertyCreatePage } from '@/pages/PropertyCreatePage';
 import { PropertyDetailsPage } from '@/pages/PropertyDetailsPage';
 import { PropertyEditPage } from '@/pages/PropertyEditPage';
-import { MainLayout } from '@/layouts/MainLayout';
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     element: <MainLayout />,
     children: [
@@ -24,7 +24,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: ROUTES.properties.root,
         element: (
@@ -33,7 +32,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: ROUTES.properties.new,
         element: (
@@ -42,7 +40,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: ROUTES.properties.details(':id'),
         element: (
@@ -51,7 +48,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: ROUTES.properties.edit(':id'),
         element: (
@@ -60,7 +56,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: `${ROUTES.AGENT}/*`,
         element: (
@@ -71,7 +66,6 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: `${ROUTES.ADMIN}/*`,
         element: (
@@ -82,24 +76,20 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: ROUTES.HOME,
         element: <Navigate to={ROUTES.PROFILE} replace />,
       },
     ],
   },
-
   {
     path: ROUTES.LOGIN,
     element: <LoginPage />,
   },
-
   {
     path: ROUTES.SIGNUP,
     element: <SignupPage />,
   },
-
   {
     path: '*',
     element: <Navigate to={ROUTES.HOME} replace />,
