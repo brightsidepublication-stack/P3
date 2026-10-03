@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Spinner } from '@/components/ui/Spinner';
@@ -10,9 +9,14 @@ import { useProperties } from '@/features/properties/hooks/useProperties';
 import { ROUTES } from '@/constants/routes';
 
 export function MyPropertiesPage() {
-  const { properties, isLoading, error, refetch } = useProperties();
+  const {
+    items,
+    loading,
+    error,
+    reload,
+  } = useProperties();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <main className="p-4">
         <div className="flex min-h-[300px] items-center justify-center">
@@ -28,7 +32,7 @@ export function MyPropertiesPage() {
         <ErrorState
           title="دریافت املاک انجام نشد"
           message={error}
-          onRetry={() => void refetch()}
+          onRetry={() => void reload()}
         />
       </main>
     );
@@ -40,7 +44,7 @@ export function MyPropertiesPage() {
         <PageHeader
           title="املاک من"
           description="املاکی که توسط شما ثبت شده‌اند"
-          action={
+          actions={
             <Link to={ROUTES.properties.new}>
               <Button type="button">
                 ثبت ملک جدید
@@ -49,21 +53,27 @@ export function MyPropertiesPage() {
           }
         />
 
-        {properties.length === 0 ? (
-          <EmptyState
-            title="هنوز ملکی ثبت نکرده‌اید"
-            description="برای شروع، اولین ملک خود را ثبت کنید."
-            action={
+        {items.length === 0 ? (
+          <div className="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
+            <h2 className="text-base font-semibold text-slate-800">
+              هنوز ملکی ثبت نکرده‌اید
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-500">
+              برای شروع، اولین ملک خود را ثبت کنید.
+            </p>
+
+            <div className="mt-5">
               <Link to={ROUTES.properties.new}>
                 <Button type="button">
                   ثبت ملک جدید
                 </Button>
               </Link>
-            }
-          />
+            </div>
+          </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {properties.map((property) => (
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((property) => (
               <PropertyCard
                 key={property.id}
                 property={property}
