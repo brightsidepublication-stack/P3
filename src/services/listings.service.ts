@@ -1,3 +1,4 @@
+
 import { getSupabaseClient } from './supabase/client';
 import { AppError, toAppError } from '@/lib/errors';
 import type { Database } from '@/types/database.types';
@@ -23,7 +24,6 @@ export type ListingFormInput = {
 
 async function requireUserId(): Promise<string> {
   const sb = getSupabaseClient();
-
   const { data, error } = await sb.auth.getUser();
 
   if (error) {
@@ -48,13 +48,10 @@ function emptyToNull(
   }
 
   const trimmed = value.trim();
-
   return trimmed.length === 0 ? null : trimmed;
 }
 
-/**
- * دریافت آگهی‌های ایجادشده توسط کاربر فعلی.
- */
+/** دریافت آگهی‌های ایجادشده توسط کاربر فعلی. */
 export async function listOwnListings(): Promise<ListingRow[]> {
   try {
     const userId = await requireUserId();
@@ -76,9 +73,7 @@ export async function listOwnListings(): Promise<ListingRow[]> {
   }
 }
 
-/**
- * دریافت یک آگهی با شناسه.
- */
+/** دریافت یک آگهی با شناسه. */
 export async function getListingById(
   id: string,
 ): Promise<ListingRow | null> {
@@ -101,12 +96,7 @@ export async function getListingById(
   }
 }
 
-/**
- * ایجاد آگهی جدید.
- *
- * آگهی جدید همیشه با وضعیت draft ایجاد می‌شود.
- * کاربر بعداً آن را برای بررسی ارسال می‌کند.
- */
+/** ایجاد آگهی جدید با وضعیت draft. */
 export async function createListing(
   input: ListingFormInput,
 ): Promise<ListingRow> {
@@ -118,22 +108,17 @@ export async function createListing(
       property_id: input.property_id,
       title: input.title.trim(),
       description: emptyToNull(input.description),
-
       advertiser_type: input.advertiser_type,
-      advertiser_user_id:
-        input.advertiser_user_id ?? null,
+
+      // سیاست RLS درج، آگهی‌دهنده را برابر کاربر فعلی می‌خواهد.
+      advertiser_user_id: input.advertiser_user_id ?? userId,
 
       transaction_type: input.transaction_type,
-
-      listing_kind:
-        input.listing_kind ?? 'standard',
-
+      listing_kind: input.listing_kind ?? 'standard',
       created_by: userId,
-
       status: 'draft',
       result: 'active',
       visibility: 'hidden',
-
       flexible_attributes: {},
     };
 
@@ -153,35 +138,23 @@ export async function createListing(
   }
 }
 
-/**
- * ویرایش آگهی.
- *
- * وضعیت انتشار، نتیجه و visibility از این مسیر
- * قابل تغییر نیستند و فقط فیلدهای محتوایی و پایه
- * آگهی ویرایش می‌شوند.
- */
+/** ویرایش محتوای آگهی بدون تغییر شناسه‌های هویتی آن. */
 export async function updateListing(
   id: string,
   input: ListingFormInput,
 ): Promise<ListingRow> {
   try {
     await requireUserId();
-
     const sb = getSupabaseClient();
 
     const payload: ListingUpdate = {
-      property_id: input.property_id,
+      // شناسه ملک در این مسیر تغییر داده نمی‌شود.
+      // تریگر دیتابیس تغییر property_id را منع می‌کند.
       title: input.title.trim(),
       description: emptyToNull(input.description),
-
       advertiser_type: input.advertiser_type,
-      advertiser_user_id:
-        input.advertiser_user_id ?? null,
-
       transaction_type: input.transaction_type,
-
-      listing_kind:
-        input.listing_kind ?? 'standard',
+      listing_kind: input.listing_kind ?? 'standard',
     };
 
     const { data, error } = await sb
@@ -201,13 +174,7 @@ export async function updateListing(
   }
 }
 
-/**
- * ارسال آگهی برای بررسی.
- *
- * فقط آگهی متعلق به کاربر فعلی ارسال می‌شود.
- * تغییر وضعیت به pending_review در دیتابیس/RLS
- * کنترل می‌شود.
- */
+/** ارسال آگهی برای بررسی. */
 export async function submitListingForReview(
   id: string,
 ): Promise<ListingRow> {
@@ -215,12 +182,11 @@ export async function submitListingForReview(
     const userId = await requireUserId();
     const sb = getSupabaseClient();
 
-    const { data: existing, error: existingError } =
-      await sb
-        .from('listings')
-        .select('id, created_by, status')
-        .eq('id', id)
-        .maybeSingle();
+    const { data: existing, error: existingError } = await sb
+      .from('listings')
+      .select('id, created_by, status')
+      .eq('id', id)
+      .maybeSingle();
 
     if (existingError) {
       throw existingError;
