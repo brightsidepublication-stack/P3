@@ -341,3 +341,21 @@ export async function rejectListing(
   }
 }
 
+/** فهرست آگهی‌هایی که طبق سیاست انتشار برای عموم قابل مشاهده‌اند. */
+export async function listPublicListings(): Promise<ListingRow[]> {
+  try {
+    const sb = getSupabaseClient();
+    const { data, error } = await sb
+      .from('listings')
+      .select('*')
+      .eq('status', 'published')
+      .eq('visibility', 'public')
+      .order('published_at', { ascending: false });
+
+    if (error) throw error;
+    return (data ?? []) as ListingRow[];
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
