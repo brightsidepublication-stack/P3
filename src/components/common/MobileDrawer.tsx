@@ -1,4 +1,4 @@
-import { Home, LogIn, Plus, UserCircle, X, Building2, ClipboardList } from 'lucide-react';
+import { Home, LogIn, Plus, UserCircle, X, Building2, ClipboardList, Search } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { ROUTES } from '../../constants/routes';
@@ -78,6 +78,15 @@ export function MobileDrawer({
           >
             <Home aria-hidden="true" className="h-5 w-5" />
             <span>خانه</span>
+          </Link>
+
+          <Link
+            to={ROUTES.browse}
+            onClick={onClose}
+            className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${isActive(ROUTES.browse) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'}`}
+          >
+            <Search aria-hidden="true" className="h-5 w-5" />
+            <span>آگهی‌های عمومی</span>
           </Link>
 
           <Link
