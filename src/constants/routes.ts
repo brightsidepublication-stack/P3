@@ -17,6 +17,7 @@ export const ROUTES = {
   listings: {
     root: '/listings',
     new: '/listings/new',
+    edit: (id: string) => `/listings/${id}/edit`,
   },
 } as const;
 
