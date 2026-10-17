@@ -113,7 +113,8 @@ The current application includes the initial listing lifecycle:
 2. Create a listing linked to one of the user's properties. New listings are stored as hidden drafts.
 3. Review drafts under **آگهی‌های من**; drafts and rejected listings can be edited and resubmitted.
 4. An administrator or super administrator can review pending listings, publish eligible listings, or reject them with a reason from **بررسی آگهی‌ها**.
-5. Database row-level security and validation triggers remain authoritative. A successful client-side action is not a substitute for the database's permission and integrity checks.
+5. Published/public listings appear on the public **آگهی‌های املاک** page (`/browse`) and have a public details page.
+6. Database row-level security and validation triggers remain authoritative. A successful client-side action is not a substitute for the database's permission and integrity checks.
 
 The listing form currently creates standard listings. Short-term listings have additional database requirements and are deliberately not editable through the standard-listing form until their dedicated details form is implemented. The moderation page warns that short-term listings require their matching detail record before publication.
 
