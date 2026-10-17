@@ -13,6 +13,7 @@ import { PropertyDetailsPage } from '@/pages/PropertyDetailsPage';
 import { PropertyEditPage } from '@/pages/PropertyEditPage';
 import { ListingCreatePage } from '@/pages/ListingCreatePage';
 import { MyListingsPage } from '@/pages/MyListingsPage';
+import { AdminListingsPage } from '@/pages/AdminListingsPage';
 
 export const router = createHashRouter([
   {
@@ -88,8 +89,8 @@ export const router = createHashRouter([
         path: `${ROUTES.ADMIN}/*`,
         element: (
           <ProtectedRoute>
-            <RoleGuard requiredRoles={['admin']}>
-              <div>Admin Area</div>
+            <RoleGuard requiredRoles={['admin', 'super_admin']}>
+              <AdminListingsPage />
             </RoleGuard>
           </ProtectedRoute>
         ),
