@@ -21,6 +21,9 @@ type RawForm = {
 type Props = {
   properties: PropertyRow[];
   submitting: boolean;
+  initialValues?: Partial<RawForm>;
+  submitLabel?: string;
+  propertyLocked?: boolean;
   errorMessage?: string | null;
   onSubmit: (values: ListingFormInput) => void | Promise<void>;
   onCancel?: () => void;
@@ -37,11 +40,14 @@ const EMPTY: RawForm = {
 export function ListingForm({
   properties,
   submitting,
+  initialValues,
+  submitLabel = 'ذخیره پیش‌نویس آگهی',
+  propertyLocked = false,
   errorMessage,
   onSubmit,
   onCancel,
 }: Props) {
-  const [values, setValues] = useState<RawForm>(EMPTY);
+  const [values, setValues] = useState<RawForm>(() => ({ ...EMPTY, ...(initialValues ?? {}) }));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const set = <K extends keyof RawForm,>(key: K, value: RawForm[K]) => {
@@ -98,7 +104,7 @@ export function ListingForm({
               id="lf-property"
               value={values.property_id}
               onChange={(event) => set('property_id', event.target.value)}
-              disabled={submitting || properties.length === 0}
+              disabled={submitting || properties.length === 0 || propertyLocked}
               required
             >
               <option value="">— انتخاب ملک —</option>
@@ -208,7 +214,7 @@ export function ListingForm({
 
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={submitting || properties.length === 0}>
-          {submitting ? 'در حال ذخیره...' : 'ذخیره پیش‌نویس آگهی'}
+          {submitting ? 'در حال ذخیره...' : submitLabel}
         </Button>
         {onCancel ? (
           <Button type="button" variant="secondary" onClick={onCancel} disabled={submitting}>
