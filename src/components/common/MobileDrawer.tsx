@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import { ROUTES } from '../../constants/routes';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 type MobileDrawerProps = {
   open: boolean;
@@ -15,6 +16,8 @@ export function MobileDrawer({
 }: MobileDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const location = useLocation();
+  const { profile } = useAuth();
+  const canReviewListings = profile?.role === 'admin' || profile?.role === 'super_admin';
 
   useFocusTrap(drawerRef, open);
 
@@ -112,6 +115,17 @@ export function MobileDrawer({
             <FilePlusMenuIcon />
             <span>ثبت آگهی جدید</span>
           </Link>
+
+          {canReviewListings ? (
+            <Link
+              to={ROUTES.ADMIN}
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${location.pathname.startsWith(ROUTES.ADMIN) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'}`}
+            >
+              <ClipboardList aria-hidden="true" className="h-5 w-5" />
+              <span>بررسی آگهی‌ها</span>
+            </Link>
+          ) : null}
 
           <Link
             to={ROUTES.PROFILE}
