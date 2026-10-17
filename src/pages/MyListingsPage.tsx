@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FilePlus2, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -76,7 +76,7 @@ export function MyListingsPage() {
         actions={
           <Link to={ROUTES.listings.new}>
             <Button type="button">
-              <FilePlus2 aria-hidden="true" className="me-2 h-4 w-4" />
+              <Plus aria-hidden="true" className="me-2 h-4 w-4" />
               ثبت آگهی
             </Button>
           </Link>
