@@ -144,14 +144,21 @@ export function MyListingsPage() {
                 </div>
 
                 {(listing.status === 'draft' || listing.status === 'rejected') ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={busyId === listing.id}
-                    onClick={() => void handleSubmitForReview(listing.id)}
-                  >
-                    {busyId === listing.id ? 'در حال ارسال...' : 'ارسال برای بررسی'}
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Link to={ROUTES.listings.edit(listing.id)}>
+                      <Button type="button" variant="secondary" size="sm">
+                        ویرایش
+                      </Button>
+                    </Link>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={busyId === listing.id}
+                      onClick={() => void handleSubmitForReview(listing.id)}
+                    >
+                      {busyId === listing.id ? 'در حال ارسال...' : 'ارسال برای بررسی'}
+                    </Button>
+                  </div>
                 ) : null}
               </div>
             </Card>
