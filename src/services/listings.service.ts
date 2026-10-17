@@ -236,3 +236,108 @@ export async function submitListingForReview(
     throw toAppError(error);
   }
 }
+
+/** دریافت آگهی‌های منتظر بررسی؛ دسترسی نهایی را RLS کنترل می‌کند. */
+export async function listListingsForReview(): Promise<ListingRow[]> {
+  try {
+    await requireUserId();
+    const sb = getSupabaseClient();
+    const { data, error } = await sb
+      .from('listings')
+      .select('*')
+      .eq('status', 'pending_review')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []) as ListingRow[];
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** انتشار آگهی پس از تأیید مدیر؛ وضعیت و نمایش عمومی هم‌زمان تغییر می‌کنند. */
+export async function publishListing(id: string): Promise<ListingRow> {
+  try {
+    await requireUserId();
+    const sb = getSupabaseClient();
+
+    const { data: existing, error: existingError } = await sb
+      .from('listings')
+      .select('id, status')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (!existing) {
+      throw new AppError('NOT_FOUND', 'آگهی موردنظر پیدا نشد.');
+    }
+    if (existing.status !== 'pending_review') {
+      throw new AppError('VALIDATION', 'فقط آگهی‌های در انتظار بررسی قابل انتشار هستند.');
+    }
+
+    const { data, error } = await sb
+      .from('listings')
+      .update({
+        status: 'published',
+        visibility: 'public',
+        published_at: new Date().toISOString(),
+        rejected_reason: null,
+      })
+      .eq('id', id)
+      .eq('status', 'pending_review')
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data as ListingRow;
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** رد آگهی با ثبت دلیل؛ مدیر باید از طریق RLS مجوز تغییر وضعیت داشته باشد. */
+export async function rejectListing(
+  id: string,
+  reason: string,
+): Promise<ListingRow> {
+  try {
+    await requireUserId();
+    const cleanReason = reason.trim();
+    if (!cleanReason) {
+      throw new AppError('VALIDATION', 'برای رد آگهی، دلیل را وارد کنید.');
+    }
+
+    const sb = getSupabaseClient();
+    const { data: existing, error: existingError } = await sb
+      .from('listings')
+      .select('id, status')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+    if (!existing) {
+      throw new AppError('NOT_FOUND', 'آگهی موردنظر پیدا نشد.');
+    }
+    if (existing.status !== 'pending_review') {
+      throw new AppError('VALIDATION', 'فقط آگهی‌های در انتظار بررسی قابل رد هستند.');
+    }
+
+    const { data, error } = await sb
+      .from('listings')
+      .update({
+        status: 'rejected',
+        visibility: 'hidden',
+        rejected_reason: cleanReason,
+      })
+      .eq('id', id)
+      .eq('status', 'pending_review')
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data as ListingRow;
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
