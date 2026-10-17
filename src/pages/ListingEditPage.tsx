@@ -57,6 +57,10 @@ export function ListingEditPage() {
         setError('فقط آگهی‌های پیش‌نویس یا ردشده قابل ویرایش هستند.');
         return;
       }
+      if (existing.listing_kind !== 'standard') {
+        setError('ویرایش آگهی اقامت کوتاه‌مدت در فرم فعلی پشتیبانی نمی‌شود؛ برای جلوگیری از تغییر ناخواسته نوع آگهی، این مورد قابل ویرایش نیست.');
+        return;
+      }
 
       const ownProperties = await listOwnProperties();
       setListing(existing);
