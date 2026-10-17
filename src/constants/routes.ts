@@ -13,6 +13,11 @@ export const ROUTES = {
     details: (id: string) => `/properties/${id}`,
     edit: (id: string) => `/properties/${id}/edit`,
   },
+
+  listings: {
+    root: '/listings',
+    new: '/listings/new',
+  },
 } as const;
 
 export const AUTH_ROUTES: readonly string[] = [
