@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, Menu, UserCircle } from 'lucide-react';
+import { Building2, ClipboardList, Menu, Search, UserCircle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { Container } from '../ui/Container';
@@ -72,6 +72,10 @@ export function Header({
 
         {!isAuthPage ? (
           <nav aria-label="ناوبری دسکتاپ" className="hidden items-center gap-1 md:flex">
+            <Link to={ROUTES.browse} className={linkClass(ROUTES.browse)}>
+              <Search aria-hidden="true" className="h-4 w-4" />
+              آگهی‌های عمومی
+            </Link>
             <Link to={ROUTES.properties.root} className={linkClass(ROUTES.properties.root)}>
               <Building2 aria-hidden="true" className="h-4 w-4" />
               املاک من
