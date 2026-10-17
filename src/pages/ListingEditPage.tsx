@@ -116,6 +116,7 @@ export function ListingEditPage() {
       />
       <div className="mt-6">
         <ListingForm
+          key={listing.id}
           properties={properties}
           initialValues={{
             property_id: listing.property_id,
