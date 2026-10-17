@@ -3,6 +3,7 @@ export const ROUTES = {
   LOGIN: '/login',
   SIGNUP: '/signup',
   PROFILE: '/profile',
+  browse: '/browse',
 
   AGENT: '/agent',
   ADMIN: '/admin',
@@ -17,6 +18,7 @@ export const ROUTES = {
   listings: {
     root: '/listings',
     new: '/listings/new',
+    details: (id: string) => `/listings/${id}`,
     edit: (id: string) => `/listings/${id}/edit`,
   },
 } as const;
