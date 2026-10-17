@@ -44,7 +44,7 @@ export function ListingForm({
   const [values, setValues] = useState<RawForm>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const set = <K extends keyof RawForm>(key: K, value: RawForm[K]) => {
+  const set = <K extends keyof RawForm,>(key: K, value: RawForm[K]) => {
     setValues((current) => ({ ...current, [key]: value }));
   };
 
