@@ -116,7 +116,7 @@ export const router = createHashRouter([
       },
       {
         path: ROUTES.HOME,
-        element: <Navigate to={ROUTES.PROFILE} replace />,
+        element: <Navigate to={ROUTES.browse} replace />,
       },
     ],
   },
