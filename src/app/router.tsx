@@ -13,6 +13,7 @@ import { PropertyDetailsPage } from '@/pages/PropertyDetailsPage';
 import { PropertyEditPage } from '@/pages/PropertyEditPage';
 import { ListingCreatePage } from '@/pages/ListingCreatePage';
 import { MyListingsPage } from '@/pages/MyListingsPage';
+import { ListingEditPage } from '@/pages/ListingEditPage';
 import { AdminListingsPage } from '@/pages/AdminListingsPage';
 
 export const router = createHashRouter([
@@ -72,6 +73,14 @@ export const router = createHashRouter([
         element: (
           <ProtectedRoute>
             <ListingCreatePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.listings.edit(':id'),
+        element: (
+          <ProtectedRoute>
+            <ListingEditPage />
           </ProtectedRoute>
         ),
       },
