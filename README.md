@@ -104,3 +104,18 @@ For CI workflows, configure the required Supabase URL and anon/publishable key a
 ## License
 
 No license terms are specified in this README. Unless a license is added to the repository, do not assume that reuse, redistribution, or modification is granted.
+
+## Listing workflow (Phase 7)
+
+The current application includes the initial listing lifecycle:
+
+1. Register the property's base information under **املاک من**.
+2. Create a listing linked to one of the user's properties. New listings are stored as hidden drafts.
+3. Review drafts under **آگهی‌های من**; drafts and rejected listings can be edited and resubmitted.
+4. An administrator or super administrator can review pending listings, publish eligible listings, or reject them with a reason from **بررسی آگهی‌ها**.
+5. Database row-level security and validation triggers remain authoritative. A successful client-side action is not a substitute for the database's permission and integrity checks.
+
+The listing form currently creates standard listings. Short-term listings have additional database requirements and are deliberately not editable through the standard-listing form until their dedicated details form is implemented. The moderation page warns that short-term listings require their matching detail record before publication.
+
+Before release, validate the complete flow with separate ordinary-user and admin accounts in the intended Supabase project: create a property, create a draft listing, edit it, submit it, publish/reject it as admin, and verify that only published/public listings are visible to unauthenticated users. Never use a service-role key in the frontend.
+
