@@ -112,7 +112,7 @@ export function MobileDrawer({
             onClick={onClose}
             className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${isActive(ROUTES.listings.new) ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50'}`}
           >
-            <FilePlusMenuIcon />
+            <Plus aria-hidden="true" className="h-5 w-5" />
             <span>ثبت آگهی جدید</span>
           </Link>
 
@@ -150,6 +150,3 @@ export function MobileDrawer({
   );
 }
 
-function FilePlusMenuIcon() {
-  return <ClipboardList aria-hidden="true" className="h-5 w-5" />;
-}
